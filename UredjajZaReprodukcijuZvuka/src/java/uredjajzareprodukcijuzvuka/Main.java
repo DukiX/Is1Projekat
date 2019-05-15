@@ -17,6 +17,8 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.TextMessage;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -39,6 +41,8 @@ public class Main {
         JMSContext context = cf.createContext();
         JMSConsumer consumer = context.createConsumer(q);   
 
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("UredjajZaReprodukcijuZvukaPU");
+        
         while(true){
             Message m = consumer.receive();
             if(m instanceof TextMessage){
