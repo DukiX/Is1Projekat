@@ -23,6 +23,13 @@ public class PustenePesme implements Serializable {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    public PustenePesme() {
+    }
+
+    public PustenePesme(String NazivPesme) {
+        this.NazivPesme = NazivPesme;
+    }
+
     public Long getId() {
         return id;
     }

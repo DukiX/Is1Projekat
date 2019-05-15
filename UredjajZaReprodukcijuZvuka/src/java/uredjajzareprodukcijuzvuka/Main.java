@@ -5,8 +5,10 @@
  */
 package uredjajzareprodukcijuzvuka;
 
+import entiteti.PustenePesme;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Resource;
@@ -17,8 +19,14 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.TextMessage;
+import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.ParameterExpression;
+import javax.persistence.criteria.Root;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -42,6 +50,7 @@ public class Main {
         JMSConsumer consumer = context.createConsumer(q);   
 
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("UredjajZaReprodukcijuZvukaPU");
+        EntityManager em = emf.createEntityManager();
         
         while(true){
             Message m = consumer.receive();
@@ -54,9 +63,30 @@ public class Main {
                         String imePesme = tm.getText();
                         System.out.println("Pustam pesmu: "+imePesme);
                         pustiPesmu(imePesme);
+                        
+                        em.getTransaction().begin();
+                        
+                        PustenePesme p = new PustenePesme(imePesme);
+                        
+                        em.persist(p);
+                        
+                        em.getTransaction().commit();
                     }else if(vrstaPoruke.equals("PrikaziPrethodne")){
-                        //do baze
-                        System.out.println("Prikazujem");
+                        
+                        CriteriaBuilder cb = em.getCriteriaBuilder();
+                        
+                        CriteriaQuery<PustenePesme> q = cb.createQuery(PustenePesme.class);
+                        Root<PustenePesme> c = q.from(PustenePesme.class);
+                        
+                        q.select(c).distinct(true);
+                        
+                        TypedQuery<PustenePesme> tq = em.createQuery(q);
+                        List<PustenePesme> lista = tq.getResultList();
+                        
+                        System.out.println("Lista dosada pustenih pesama:");
+                        for(PustenePesme p:lista){
+                            System.out.println(p.getNazivPesme());
+                        }
                     }else{
                         System.out.println("Nepoznata komanda!");
                     }

@@ -36,28 +36,43 @@ public class Main {
         Scanner sc = new Scanner(System.in); 
         while(true){
             try {
-                System.out.println("Tip poruke ili kraj");
-                String tip = sc.nextLine();
+                System.out.println("Tip poruke:\n"
+                        + "1: Pusti pesmu\n"
+                        + "2: Izlistaj prethodne pesme\n"
+                        + "0: Kraj rada");
+                String sctip = sc.nextLine();
+                int tip = Integer.parseInt(sctip);
+                String tipStr="";
                 String pesma="";
-                if(tip.equals("kraj")){
+                if(tip==0){
                     break;
                 }
-                if(tip.equals("PustiPesmu")){
+                if(tip==1){
+                    System.out.println("Unesi ime pesme:");
                     pesma = sc.nextLine();
-                }else if(tip.equals("PrikaziPrethodne")){
+                    tipStr = "PustiPesmu";
+                }else if(tip==2){
                     pesma = "";
+                    tipStr = "PrikaziPrethodne";
                 }else {
                     System.out.println("Nepoznat tip");
                     continue;
                 }
                 TextMessage message = context.createTextMessage(pesma);
-                message.setStringProperty("Vrsta", tip);
+                message.setStringProperty("Vrsta", tipStr);
                 
                 producer.send(q, message);
                 
-                System.out.println("Poslat je zahtev: " + message.getText() + ", tip vesti: " + tip);
+                if(tip==1){
+                    System.out.println("Poslat je zahtev za pustanje pesme: "+pesma);
+                }else if(tip==2){
+                    System.out.println("Poslat je zahtev za prikazivanje prethodnih pesama");
+                }
+                
             } catch (JMSException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (NumberFormatException e){
+                System.out.println("Morate uneti broj!");
             }
         }
         sc.close();
