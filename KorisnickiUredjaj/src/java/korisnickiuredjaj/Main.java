@@ -20,7 +20,6 @@ import javax.jms.JMSException;
 import javax.jms.JMSProducer;
 import javax.jms.Message;
 import javax.jms.ObjectMessage;
-import javax.jms.Queue;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
@@ -159,7 +158,7 @@ public class Main {
                             try {
                                 System.out.println("Izaberi opciju:\n"
                                         + "1: Navij alarm u zeljeno vreme i datum\n"
-                                        + "2: Navij periodican alarm u zeljeno vreme"
+                                        + "2: Navij periodican alarm u zeljeno vreme\n"
                                         + "3: Navij alarm u ponudjeno vreme\n"
                                         + "4: Postavi zeljeno zvono alarma\n"
                                         + "0: Nazad");
@@ -185,9 +184,8 @@ public class Main {
                                     case 2:
                                         System.out.println("Unesi zeljeno vreme: HH:mm");
                                         poruka = sc.nextLine();
-                                        poruka = "10/10/2010" + poruka;
                                         try {
-                                            SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+                                            SimpleDateFormat format = new SimpleDateFormat("HH:mm");
                                             format.parse(poruka);
                                         } catch (ParseException e) {
                                             System.out.println("Pogresan format datuma");
@@ -234,7 +232,7 @@ public class Main {
                                             String brAlStr = sc.nextLine();
                                             int brAl = Integer.parseInt(brAlStr);
                                             if (brAl >= 0 && brAl < lista.size()) {
-                                                tipStr = "NavijAlarm";
+                                                tipStr = "NavijAlarmPeriodican";
                                                 poruka = lista.get(brAl);
                                             } else {
                                                 System.out.println("Nepostojeci broj!");

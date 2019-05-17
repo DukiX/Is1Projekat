@@ -6,7 +6,6 @@
 package uredjajzareprodukcijuzvuka;
 
 import entiteti.PustenePesme;
-import entiteti.PustenePesme_;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.LinkedList;
@@ -29,7 +28,6 @@ import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
