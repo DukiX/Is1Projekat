@@ -6,6 +6,7 @@
 package uredjajzareprodukcijuzvuka;
 
 import entiteti.PustenePesme;
+import entiteti.PustenePesme_;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.LinkedList;
@@ -20,7 +21,6 @@ import javax.jms.JMSException;
 import javax.jms.JMSProducer;
 import javax.jms.Message;
 import javax.jms.ObjectMessage;
-import javax.jms.Queue;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.persistence.EntityManager;
@@ -29,6 +29,7 @@ import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -51,11 +52,13 @@ public class Main {
      */
     public static void main(String[] args) {
         JMSContext context = cf.createContext();
-        JMSConsumer consumer = context.createConsumer(topic);
+        JMSConsumer consumer = context.createConsumer(topic, "id = " + 1);
+        JMSProducer producer = context.createProducer();
 
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("UredjajZaReprodukcijuZvukaPU");
         EntityManager em = emf.createEntityManager();
 
+        wh:
         while (true) {
             Message m = consumer.receive();
             if (m instanceof TextMessage) {
@@ -63,44 +66,55 @@ public class Main {
                     TextMessage tm = (TextMessage) m;
                     String vrstaPoruke = tm.getStringProperty("Vrsta");
 
-                    if (vrstaPoruke.equals("PustiPesmu")) {
-                        String imePesme = tm.getText();
-                        System.out.println("Pustam pesmu: " + imePesme);
-                        if (pustiPesmu(imePesme)) {
+                    switch (vrstaPoruke) {
+                        case "PustiPesmu":
+                            String imePesme = tm.getText();
+                            System.out.println("Pustam pesmu: " + imePesme);
+                            String s = "";
+                            if (pustiPesmu(imePesme)) {
 
-                            em.getTransaction().begin();
+                                em.getTransaction().begin();
 
-                            PustenePesme p = new PustenePesme(imePesme);
+                                PustenePesme p = new PustenePesme(imePesme);
 
-                            em.persist(p);
+                                em.persist(p);
 
-                            em.getTransaction().commit();
-                        }
-                    } else if (vrstaPoruke.equals("PrikaziPrethodne")) {
+                                em.getTransaction().commit();
+                                s = "Pustena pesma: " + imePesme;
+                            } else {
+                                s = "Neuspelo pustanje pesme";
+                            }
 
-                        CriteriaBuilder cb = em.getCriteriaBuilder();
+                            TextMessage tekstpor = context.createTextMessage(s);
+                            tekstpor.setIntProperty("id", 2);
+                            producer.send(topic, tekstpor);
 
-                        CriteriaQuery<PustenePesme> q = cb.createQuery(PustenePesme.class);
-                        Root<PustenePesme> c = q.from(PustenePesme.class);
+                            break;
+                        case "PrikaziPrethodne":
+                            CriteriaBuilder cb = em.getCriteriaBuilder();
+                            CriteriaQuery<PustenePesme> q = cb.createQuery(PustenePesme.class);
+                            Root<PustenePesme> c = q.from(PustenePesme.class);
+                            q.select(c).distinct(true);
+                            TypedQuery<PustenePesme> tq = em.createQuery(q);
+                            List<PustenePesme> lista = tq.getResultList();
+                            LinkedList<PustenePesme> lst = new LinkedList<>();
+                            lista.forEach((l) -> {
+                                lst.add(l);
+                            });
+                            ObjectMessage om = context.createObjectMessage(lst);
 
-                        q.select(c).distinct(true);
-
-                        TypedQuery<PustenePesme> tq = em.createQuery(q);
-                        List<PustenePesme> lista = tq.getResultList();
-                        LinkedList<PustenePesme> lst = new LinkedList<>();
-                        lista.forEach((l) -> {
-                            lst.add(l);
-                        });
-                        ObjectMessage om = context.createObjectMessage(lst);
-                        JMSProducer producer = context.createProducer();
-                        producer.send(topic, om);
-                        System.out.println("Poslata lista do sada pustenih pesama");
-                        /*System.out.println("Lista do sada pustenih pesama:");
-                        for(PustenePesme p:lista){
+                            om.setIntProperty("id", 2);
+                            producer.send(topic, om);
+                            System.out.println("Poslata lista do sada pustenih pesama");
+                            /*System.out.println("Lista do sada pustenih pesama:");
+                            for(PustenePesme p:lista){
                             System.out.println(p.getNazivPesme());
-                        }*/
-                    } else {
-                        System.out.println("Nepoznata komanda!");
+                            }*/ break;
+                        case "Kraj":
+                            break wh;
+                        default:
+                            System.out.println("Nepoznata komanda!");
+                            break;
                     }
                 } catch (JMSException ex) {
                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
