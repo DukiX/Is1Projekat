@@ -158,9 +158,10 @@ public class Main {
                         while (true) {
                             try {
                                 System.out.println("Izaberi opciju:\n"
-                                        + "1: Navij alarm u zeljeno vreme\n"
-                                        + "2: Navij alarm u ponudjeno vreme\n"
-                                        + "3: Postavi zeljeno zvono alarma\n"
+                                        + "1: Navij alarm u zeljeno vreme i datum\n"
+                                        + "2: Navij periodican alarm u zeljeno vreme"
+                                        + "3: Navij alarm u ponudjeno vreme\n"
+                                        + "4: Postavi zeljeno zvono alarma\n"
                                         + "0: Nazad");
                                 String sctip = sc.nextLine();
                                 int tip = Integer.parseInt(sctip);
@@ -172,16 +173,29 @@ public class Main {
                                     case 1:
                                         System.out.println("Unesi zeljeno vreme: dd/MM/yyyy HH:mm");
                                         poruka = sc.nextLine();
-                                        try{
+                                        try {
                                             SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm");
                                             format.parse(poruka);
-                                        }catch(ParseException e){
+                                        } catch (ParseException e) {
                                             System.out.println("Pogresan format datuma");
                                             break whA;
                                         }
                                         tipStr = "NavijAlarm";
                                         break;
                                     case 2:
+                                        System.out.println("Unesi zeljeno vreme: HH:mm");
+                                        poruka = sc.nextLine();
+                                        poruka = "10/10/2010" + poruka;
+                                        try {
+                                            SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+                                            format.parse(poruka);
+                                        } catch (ParseException e) {
+                                            System.out.println("Pogresan format datuma");
+                                            break whA;
+                                        }
+                                        tipStr = "NavijAlarmPeriodican";
+                                        break;
+                                    case 3:
                                         poruka = "";
                                         tipStr = "DohvatiVremena";
                                         TextMessage tm = contextA.createTextMessage(poruka);
@@ -231,7 +245,7 @@ public class Main {
                                         }
 
                                         break;
-                                    case 3:
+                                    case 4:
                                         System.out.println("Unesi ime pesme:");
                                         poruka = sc.nextLine();
                                         tipStr = "PostaviZvono";
@@ -243,19 +257,27 @@ public class Main {
                                 TextMessage message = contextA.createTextMessage(poruka);
                                 message.setStringProperty("Vrsta", tipStr);
                                 message.setIntProperty("id", 1);
-                                if (tip == 1 || tip == 2) {
-                                    System.out.println("Da li je ovo periodican alarm? d za da/bilo sta za ne");
-                                    String s = sc.nextLine();
-                                    if(s.equals("d")){
+                                if (tip == 1 || tip == 2 || tip == 3) {
+                                    if (tip == 2) {
                                         message.setBooleanProperty("periodican", true);
-                                    }else{
+                                    } else {
                                         message.setBooleanProperty("periodican", false);
                                     }
                                     producerA.send(topicA, message);
                                     System.out.println("Poslat je zahtev za navijanje alarma: " + message.getText());
-                                } else if (tip == 3) {
+                                } else if (tip == 4) {
                                     producerA.send(topicA, message);
                                     System.out.println("Poslat je zahtev za postavljanje novog zvona alarma");
+                                }
+                                Message m = consumerA.receive();
+                                if (m instanceof TextMessage) {
+                                    try {
+                                        TextMessage tmes = (TextMessage) m;
+                                        String primljeno = tmes.getText();
+                                        System.out.println(primljeno);
+                                    } catch (JMSException ex) {
+                                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                    }
                                 }
                             } catch (JMSException ex) {
                                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
