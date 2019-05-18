@@ -157,7 +157,7 @@ public class Main {
                         while (true) {
                             try {
                                 System.out.println("Izaberi opciju:\n"
-                                        + "1: Navij alarm u zeljeno vreme i datum\n"
+                                        + "1: Navij jednokratni alarm u zeljeno vreme\n"
                                         + "2: Navij periodican alarm u zeljeno vreme\n"
                                         + "3: Navij alarm u ponudjeno vreme\n"
                                         + "4: Postavi zeljeno zvono alarma\n"
@@ -170,10 +170,10 @@ public class Main {
                                     case 0:
                                         break whA;
                                     case 1:
-                                        System.out.println("Unesi zeljeno vreme: dd/MM/yyyy HH:mm");
+                                        System.out.println("Unesi zeljeno vreme: HH:mm");
                                         poruka = sc.nextLine();
                                         try {
-                                            SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+                                            SimpleDateFormat format = new SimpleDateFormat("HH:mm");
                                             format.parse(poruka);
                                         } catch (ParseException e) {
                                             System.out.println("Pogresan format datuma");
