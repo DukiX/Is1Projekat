@@ -28,6 +28,7 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
 
@@ -37,26 +38,26 @@ import javax.persistence.criteria.Root;
  */
 public class AlarmThread extends Thread {
 
-    
-
     private EntityManager em;
-    
+
     private ConnectionFactory cf;
-    
+
     private Topic topicRz;
 
+    private long idZaObnovu;
+    
     @Override
     public void run() {
         while (!interrupted()) {
-            obrisiStare();
-            
+            deaktivirajStare();
+
             CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
             CriteriaQuery<Alarmi> query = criteriaBuilder.createQuery(Alarmi.class);
             Root<Alarmi> r = query.from(Alarmi.class);
-            
+
             query.select(r);
-            query.where(criteriaBuilder.equal(r.get("periodican"), 0), criteriaBuilder.equal(r.get("aktivan"), 1));
-            
+            query.where(criteriaBuilder.equal(r.get("aktivan"), 1));
+
             List<Order> orderList = new ArrayList();
             orderList.add(criteriaBuilder.asc(r.get("datumAlarma")));
             orderList.add(criteriaBuilder.asc(r.get("vremeAlarma")));
@@ -69,6 +70,7 @@ public class AlarmThread extends Thread {
                 if (lista != null) {
                     if (!lista.isEmpty()) {
                         Alarmi a = lista.get(0);
+                        idZaObnovu=a.getId();
                         Calendar cal1 = Calendar.getInstance();
                         cal1.setTime(a.getDatumAlarma());
                         Calendar cal2 = Calendar.getInstance();
@@ -78,14 +80,14 @@ public class AlarmThread extends Thread {
                         cal1.set(Calendar.MINUTE, cal2.get(Calendar.MINUTE));
                         cal1.set(Calendar.SECOND, cal2.get(Calendar.SECOND));
 
-                        System.out.println("budim se u: "+cal1.get(Calendar.HOUR_OF_DAY)+":"+cal1.get(Calendar.MINUTE));
-                        
+                        System.out.println("budim se u: " + cal1.get(Calendar.HOUR_OF_DAY) + ":" + cal1.get(Calendar.MINUTE));
+
                         Calendar sad = Calendar.getInstance();
 
-                        long milis =cal1.getTimeInMillis()- sad.getTimeInMillis();
+                        long milis = cal1.getTimeInMillis() - sad.getTimeInMillis();
 
                         try {
-                            System.out.println("Spavam: "+milis);
+                            System.out.println("Spavam: " + milis);
                             wait(milis);
                             System.out.println("budan");
                             sad = Calendar.getInstance();
@@ -114,10 +116,10 @@ public class AlarmThread extends Thread {
         }
     }
 
-    public AlarmThread(EntityManager em,ConnectionFactory cf,Topic topicRz) {
+    public AlarmThread(EntityManager em, ConnectionFactory cf, Topic topicRz) {
         this.em = em;
         this.cf = cf;
-        this.topicRz=topicRz;
+        this.topicRz = topicRz;
     }
 
     public EntityManager getEm() {
@@ -165,20 +167,25 @@ public class AlarmThread extends Thread {
         }
     }
 
-    
-    public void obrisiStare() {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaDelete<Alarmi> delete = cb.createCriteriaDelete(Alarmi.class);
-        Root e = delete.from(Alarmi.class);
+    public void deaktivirajStare() {
+        CriteriaBuilder cb1 = em.getCriteriaBuilder();
+        CriteriaUpdate<Alarmi> update = cb1.createCriteriaUpdate(Alarmi.class);
+        Root e = update.from(Alarmi.class);
+        update.set("aktivan", false);
+
         Date danas = new Date();
-        delete.where(cb.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
-                cb.lessThanOrEqualTo(e.get("datumAlarma"), new java.sql.Date(danas.getTime())),
-                cb.equal(e.get("periodican"), false));
+
+        update.where(cb1.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
+                cb1.lessThanOrEqualTo(e.get("datumAlarma"), new java.sql.Date(danas.getTime())));
 
         em.getTransaction().begin();
 
-        em.createQuery(delete).executeUpdate();
+        em.createQuery(update).executeUpdate();
 
         em.getTransaction().commit();
+    }
+
+    private void obnoviDatumPeriodicnim() {
+        
     }
 }

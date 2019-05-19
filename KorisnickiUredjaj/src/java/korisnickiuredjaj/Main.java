@@ -232,7 +232,13 @@ public class Main {
                                             String brAlStr = sc.nextLine();
                                             int brAl = Integer.parseInt(brAlStr);
                                             if (brAl >= 0 && brAl < lista.size()) {
-                                                tipStr = "NavijAlarmPeriodican";
+                                                System.out.println("Da li zelite da bude periodican? d za da/ostalo za ne");
+                                                String per = sc.nextLine();
+                                                if (per.equals("d")) {
+                                                    tipStr = "NavijAlarmPeriodican";
+                                                } else {
+                                                    tipStr = "NavijAlarm";
+                                                }
                                                 poruka = lista.get(brAl);
                                             } else {
                                                 System.out.println("Nepostojeci broj!");

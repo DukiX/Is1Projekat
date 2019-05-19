@@ -47,7 +47,7 @@ public class Main {
 
     @Resource(lookup = "AlarmT")
     private static Topic topic;
-    
+
     @Resource(lookup = "RepZvukaT")
     private static Topic topicRz;
 
@@ -59,7 +59,7 @@ public class Main {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("AlarmPU");
         EntityManager em = emf.createEntityManager();
 
-        AlarmThread at = new AlarmThread(em,cf,topicRz);
+        AlarmThread at = new AlarmThread(em, cf, topicRz);
         at.start();
         try {
             wh:
@@ -102,6 +102,10 @@ public class Main {
                                     em.persist(a);
 
                                     em.getTransaction().commit();
+                                    
+                                    synchronized (at) {
+                                        at.notifyAll();
+                                    }
 
                                     String s = "Alarm zabelezen: " + vreme;
                                     System.out.println(s);
@@ -110,7 +114,7 @@ public class Main {
                                     tekstpor.setIntProperty("id", 2);
                                     producer.send(topic, tekstpor);
 
-                                    obrisiStare(em);
+                                    //deaktivirajStare(em);
                                 } catch (ParseException ex) {
                                     String s = "Pogresan format vremena: " + vreme;
                                     System.out.println(s);
@@ -129,12 +133,31 @@ public class Main {
 
                                     SimpleDateFormat format = new SimpleDateFormat("HH:mm");
                                     Date vremeD = format.parse(vreme);
+
+                                    Calendar calSad = Calendar.getInstance();
+
+                                    Calendar cal = Calendar.getInstance();
+                                    cal.setTime(vremeD);
+
+                                    cal.set(Calendar.DAY_OF_MONTH, calSad.get(Calendar.DAY_OF_MONTH));
+                                    cal.set(Calendar.MONTH, calSad.get(Calendar.MONTH));
+                                    cal.set(Calendar.YEAR, calSad.get(Calendar.YEAR));
+
+                                    if (calSad.getTimeInMillis() > cal.getTimeInMillis()) {
+                                        cal.add(Calendar.DATE, 1);
+                                    }
                                     Time t = new Time(vremeD.getTime());
-                                    Alarmi a = new Alarmi(t, null, periodican, true);
+
+                                    java.sql.Date d = new java.sql.Date(cal.getTimeInMillis());
+                                    Alarmi a = new Alarmi(t, d, periodican, true);
 
                                     em.persist(a);
 
                                     em.getTransaction().commit();
+                                    
+                                    synchronized (at) {
+                                        at.notifyAll();
+                                    }
 
                                     String s = "Periodicni alarm zabelezen: " + vreme;
                                     System.out.println(s);
@@ -143,7 +166,7 @@ public class Main {
                                     tekstpor.setIntProperty("id", 2);
                                     producer.send(topic, tekstpor);
 
-                                    obrisiStare(em);
+                                    //deaktivirajStare(em);
                                 } catch (ParseException ex) {
                                     String s = "Pogresan format vremena: " + vreme;
                                     System.out.println(s);
@@ -157,7 +180,7 @@ public class Main {
                                 CriteriaBuilder cb = em.getCriteriaBuilder();
                                 CriteriaQuery<Alarmi> q = cb.createQuery(Alarmi.class);
                                 Root<Alarmi> c = q.from(Alarmi.class);
-                                q.where(cb.equal(c.get("periodican"), true));
+                                //q.where(cb.equal(c.get("periodican"), true));
                                 //q.where(cb.equal(c.get("periodican"), true),cb.equal(c.get("aktivan"),false));
                                 q.select(c);
 
@@ -218,18 +241,22 @@ public class Main {
         }
     }
 
-    public static void obrisiStare(EntityManager em) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaDelete<Alarmi> delete = cb.createCriteriaDelete(Alarmi.class);
-        Root e = delete.from(Alarmi.class);
+    public static void deaktivirajStare(EntityManager em) {
+
+        CriteriaBuilder cb1 = em.getCriteriaBuilder();
+        CriteriaUpdate<Alarmi> update = cb1.createCriteriaUpdate(Alarmi.class);
+        Root e = update.from(Alarmi.class);
+        update.set("aktivan", false);
+
         Date danas = new Date();
-        delete.where(cb.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
-                cb.lessThanOrEqualTo(e.get("datumAlarma"), new java.sql.Date(danas.getTime())),
-                cb.equal(e.get("periodican"), false));
+
+        update.where(cb1.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
+                cb1.lessThanOrEqualTo(e.get("datumAlarma"), new java.sql.Date(danas.getTime())),
+                cb1.equal(e.get("periodican"), false));
 
         em.getTransaction().begin();
 
-        em.createQuery(delete).executeUpdate();
+        em.createQuery(update).executeUpdate();
 
         em.getTransaction().commit();
     }
