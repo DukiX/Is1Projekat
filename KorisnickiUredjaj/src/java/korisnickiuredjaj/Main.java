@@ -230,7 +230,12 @@ public class Main {
 
                                         if (lista != null) {
                                             String brAlStr = sc.nextLine();
-                                            int brAl = Integer.parseInt(brAlStr);
+                                            int brAl=0;
+                                            try {
+                                                brAl = Integer.parseInt(brAlStr);
+                                            } catch (NumberFormatException e) {
+                                                break whA;
+                                            }
                                             if (brAl >= 0 && brAl < lista.size()) {
                                                 System.out.println("Da li zelite da bude periodican? d za da/ostalo za ne");
                                                 String per = sc.nextLine();

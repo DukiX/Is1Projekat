@@ -44,12 +44,11 @@ public class AlarmThread extends Thread {
 
     private Topic topicRz;
 
-    private long idZaObnovu;
-    
     @Override
     public void run() {
         while (!interrupted()) {
             deaktivirajStare();
+            obnoviDatumPeriodicnim();
 
             CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
             CriteriaQuery<Alarmi> query = criteriaBuilder.createQuery(Alarmi.class);
@@ -70,7 +69,6 @@ public class AlarmThread extends Thread {
                 if (lista != null) {
                     if (!lista.isEmpty()) {
                         Alarmi a = lista.get(0);
-                        idZaObnovu=a.getId();
                         Calendar cal1 = Calendar.getInstance();
                         cal1.setTime(a.getDatumAlarma());
                         Calendar cal2 = Calendar.getInstance();
@@ -145,12 +143,12 @@ public class AlarmThread extends Thread {
             JMSProducer producerRz = contextRz.createProducer();
 
             TextMessage message = contextRz.createTextMessage(pesma);
-            message.setStringProperty("Vrsta", "PustiPesmu");
+            message.setStringProperty("Vrsta", "PustiPesmuA");
             message.setIntProperty("id", 1);
 
             producerRz.send(topicRz, message);
             System.out.println("Poslat je zahtev za pustanje pesme: " + message.getText());
-            JMSConsumer consumerRz = contextRz.createConsumer(topicRz, "id = " + 2);
+            JMSConsumer consumerRz = contextRz.createConsumer(topicRz, "id = " + 3);
 
             Message m = consumerRz.receive();
             if (m instanceof TextMessage) {
@@ -175,8 +173,9 @@ public class AlarmThread extends Thread {
 
         Date danas = new Date();
 
-        update.where(cb1.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
-                cb1.lessThanOrEqualTo(e.get("datumAlarma"), new java.sql.Date(danas.getTime())));
+        update.where(cb1.and(cb1.equal(e.get("periodican"), false),cb1.or(cb1.and(cb1.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
+                cb1.equal(e.get("datumAlarma"), new java.sql.Date(danas.getTime()))), 
+                cb1.lessThan(e.get("datumAlarma"), new java.sql.Date(danas.getTime())))));
 
         em.getTransaction().begin();
 
@@ -186,6 +185,35 @@ public class AlarmThread extends Thread {
     }
 
     private void obnoviDatumPeriodicnim() {
-        
+        Date danas = new Date();
+        java.sql.Date dns = new java.sql.Date(danas.getTime());
+        java.sql.Time sad = new java.sql.Time(danas.getTime());
+
+        String queryStr = "SELECT a FROM Alarmi a WHERE (a.periodican = 1)"
+                + "and(a.datumAlarma = :danas and a.vremeAlarma < :sad) or (a.datumAlarma<:danas)";
+        TypedQuery<Alarmi> query = em.createQuery(queryStr, Alarmi.class);
+        query.setParameter("danas", dns);
+        query.setParameter("sad", sad);
+        List<Alarmi> results = query.getResultList();
+        for (Alarmi a : results) {
+            java.sql.Date dat = a.getDatumAlarma();
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(dat);
+            cal.add(Calendar.DATE, 1);
+            dat = new java.sql.Date(cal.getTimeInMillis());
+
+            CriteriaBuilder cb1 = em.getCriteriaBuilder();
+            CriteriaUpdate<Alarmi> update = cb1.createCriteriaUpdate(Alarmi.class);
+            Root e = update.from(Alarmi.class);
+            update.set("datumAlarma", dat);
+
+            update.where(cb1.equal(e.get("id"), a.getId()));
+
+            em.getTransaction().begin();
+
+            em.createQuery(update).executeUpdate();
+
+            em.getTransaction().commit();
+        }
     }
 }

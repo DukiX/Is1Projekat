@@ -6,6 +6,7 @@
 package uredjajzareprodukcijuzvuka;
 
 import entiteti.PustenePesme;
+import entiteti.PustenePesme_;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.LinkedList;
@@ -88,13 +89,39 @@ public class Main {
                             producer.send(topic, tekstpor);
 
                             break;
+                        case "PustiPesmuA":
+                            String imePesmeA = tm.getText();
+                            System.out.println("Pustam pesmu: " + imePesmeA);
+                            String sA = "";
+                            if (pustiPesmu(imePesmeA)) {
+
+                                em.getTransaction().begin();
+
+                                PustenePesme p = new PustenePesme(imePesmeA);
+
+                                em.persist(p);
+
+                                em.getTransaction().commit();
+                                sA = "Pustena pesma: " + imePesmeA;
+                            } else {
+                                sA = "Neuspelo pustanje pesme";
+                            }
+
+                            TextMessage tekstporA = context.createTextMessage(sA);
+                            tekstporA.setIntProperty("id", 3);
+                            producer.send(topic, tekstporA);
+
+                            break;
                         case "PrikaziPrethodne":
+
                             CriteriaBuilder cb = em.getCriteriaBuilder();
                             CriteriaQuery<PustenePesme> q = cb.createQuery(PustenePesme.class);
                             Root<PustenePesme> c = q.from(PustenePesme.class);
-                            q.select(c).distinct(true);
+                            q.select(c).groupBy(c.get("NazivPesme"));
                             TypedQuery<PustenePesme> tq = em.createQuery(q);
                             List<PustenePesme> lista = tq.getResultList();
+         
+                            
                             LinkedList<PustenePesme> lst = new LinkedList<>();
                             lista.forEach((l) -> {
                                 lst.add(l);

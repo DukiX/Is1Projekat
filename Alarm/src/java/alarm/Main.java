@@ -181,7 +181,7 @@ public class Main {
                                 CriteriaQuery<Alarmi> q = cb.createQuery(Alarmi.class);
                                 Root<Alarmi> c = q.from(Alarmi.class);
                                 //q.where(cb.equal(c.get("periodican"), true));
-                                //q.where(cb.equal(c.get("periodican"), true),cb.equal(c.get("aktivan"),false));
+                                q.where(cb.equal(c.get("aktivan"),false));
                                 q.select(c);
 
                                 TypedQuery<Alarmi> tq = em.createQuery(q);
@@ -250,9 +250,8 @@ public class Main {
 
         Date danas = new Date();
 
-        update.where(cb1.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
-                cb1.lessThanOrEqualTo(e.get("datumAlarma"), new java.sql.Date(danas.getTime())),
-                cb1.equal(e.get("periodican"), false));
+        update.where(cb1.or(cb1.and(cb1.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
+                cb1.equal(e.get("datumAlarma"), new java.sql.Date(danas.getTime()))),cb1.lessThan(e.get("datumAlarma"), new java.sql.Date(danas.getTime()))));
 
         em.getTransaction().begin();
 
