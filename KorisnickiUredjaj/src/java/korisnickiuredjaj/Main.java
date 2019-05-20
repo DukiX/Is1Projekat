@@ -201,7 +201,11 @@ public class Main {
                                             try {
                                                 ObjectMessage om = (ObjectMessage) message;
                                                 lista = (LinkedList<String>) om.getObject();
-                                                System.out.println("Izaberi broj pored zeljenog alarma:");
+                                                if (!lista.isEmpty()) {
+                                                    System.out.println("Izaberi broj pored zeljenog alarma:");
+                                                }else{
+                                                    System.out.println("Nema neaktivnih alarma:");
+                                                }
                                                 int i = 0;
                                                 for (String s : lista) {
                                                     System.out.println((i++) + ". " + s);
@@ -305,7 +309,7 @@ public class Main {
                                 String vremeProperty = "";
                                 String destinacijaProperty = "";
                                 boolean podsetnikProperty = false;
-                                int izmeniProperty=0;
+                                int izmeniProperty = 0;
 
                                 switch (tip) {
                                     case 0:
@@ -364,7 +368,7 @@ public class Main {
                                         System.out.println("Poslat je zahtev za izlistavanje obaveza");
 
                                         LinkedList<String> lista = null;
-                                        
+
                                         Message m = consumerP.receive();
                                         if (m instanceof ObjectMessage) {
                                             try {
@@ -379,7 +383,7 @@ public class Main {
                                             } catch (JMSException ex) {
                                                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                                             }
-                                        }else if (message instanceof TextMessage) {
+                                        } else if (message instanceof TextMessage) {
                                             try {
                                                 TextMessage tmes = (TextMessage) message;
                                                 String primljeno = tmes.getText();
@@ -388,7 +392,7 @@ public class Main {
                                                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                                             }
                                         }
-                                        
+
                                         if (lista != null) {
                                             String brAlStr = sc.nextLine();
                                             int brAl = 0;
@@ -398,7 +402,7 @@ public class Main {
                                                 break whP;
                                             }
                                             if (brAl >= 0 && brAl < lista.size()) {
-                                                izmeniProperty=0;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                                izmeniProperty = 0;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                             } else {
                                                 System.out.println("Nepostojeci broj!");
                                                 break whP;
@@ -406,7 +410,7 @@ public class Main {
                                         } else {
                                             break whP;
                                         }
-                                        
+
                                         tipPoruke = "izmeni";
                                         System.out.println("Da li zelite da izmenite opis obaveze? d za da/ostalo za ne");
                                         String dd = sc.nextLine();
@@ -471,7 +475,7 @@ public class Main {
                                 message.setStringProperty("Destinacija", destinacijaProperty);
                                 message.setBooleanProperty("Podsetnik", podsetnikProperty);
                                 message.setIntProperty("IdIzmeni", izmeniProperty);
-                                
+
                                 message.setIntProperty("id", 1);
 
                                 producerP.send(topicP, message);
@@ -498,11 +502,11 @@ public class Main {
                                         LinkedList<Kalendar> lista = (LinkedList<Kalendar>) om.getObject();
                                         System.out.println("Lista do sada pustenih pesama:");
                                         //System.out.println("Datum\tVreme\tOpis\tDestinacija");
-                                        System.out.printf("%-15s %-15s %-40s %-15s", "Datum","Vreme","Opis","Destinacija");
+                                        System.out.printf("%-15s %-15s %-40s %-15s", "Datum", "Vreme", "Opis", "Destinacija");
                                         System.out.println();
                                         lista.forEach((k) -> {
                                             //System.out.println(k.getDatum()+"\t"+k.getVreme()+"\t"+k.getOpis()+"\t"+k.getDestinacija());
-                                            System.out.format("%-15s %-15s %-40s %-15s",k.getDatum(),k.getVreme(),k.getOpis(),k.getDestinacija());
+                                            System.out.format("%-15s %-15s %-40s %-15s", k.getDatum(), k.getVreme(), k.getOpis(), k.getDestinacija());
                                             System.out.println();
                                         });
                                     } catch (JMSException ex) {

@@ -5,6 +5,7 @@
  */
 package planer;
 
+import entiteti.Alarmi;
 import entiteti.Kalendar;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -131,7 +132,7 @@ public class Main {
 
                             podsetnik = tm.getBooleanProperty("Podsetnik");
 
-                            long idAlarm = 0;
+                            Alarmi a =null;
 
                             if (podsetnik) {
                                 //napraviti alarm i tako to
@@ -139,7 +140,7 @@ public class Main {
 
                             em.getTransaction().begin();
 
-                            Kalendar k = new Kalendar(opis, datesql, timesql, destinacija, podsetnik, idAlarm);
+                            Kalendar k = new Kalendar(opis, datesql, timesql, destinacija, podsetnik, a);
 
                             em.persist(k);
 

@@ -12,6 +12,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 
 /**
  *
@@ -30,27 +32,32 @@ public class Kalendar implements Serializable {
     private java.sql.Time vreme;
     private String destinacija;
     private boolean podsetnik;
-    private long idAlarm;
+    
+    @OneToOne
+    @JoinColumn(name = "IDALARM")
+    private Alarmi alarm;
 
     public Kalendar() {
     }
 
-    public Kalendar(String opis, Date datum, Time vreme, String destinacija, boolean podsetnik, long idAlarm) {
+    public Kalendar(String opis, Date datum, Time vreme, String destinacija, boolean podsetnik, Alarmi alarm) {
         this.opis = opis;
         this.datum = datum;
         this.vreme = vreme;
         this.destinacija = destinacija;
         this.podsetnik = podsetnik;
-        this.idAlarm = idAlarm;
+        this.alarm = alarm;
     }
 
-    public long getIdAlarm() {
-        return idAlarm;
+    public Alarmi getAlarm() {
+        return alarm;
     }
 
-    public void setIdAlarm(long idAlarm) {
-        this.idAlarm = idAlarm;
+    public void setAlarm(Alarmi alarm) {
+        this.alarm = alarm;
     }
+
+    
 
     public String getOpis() {
         return opis;
