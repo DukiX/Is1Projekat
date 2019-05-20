@@ -14,7 +14,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Resource;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
@@ -26,7 +25,6 @@ import javax.jms.Topic;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.Order;
@@ -190,7 +188,7 @@ public class AlarmThread extends Thread {
         java.sql.Time sad = new java.sql.Time(danas.getTime());
 
         String queryStr = "SELECT a FROM Alarmi a WHERE (a.periodican = 1)"
-                + "and(a.datumAlarma = :danas and a.vremeAlarma < :sad) or (a.datumAlarma<:danas)";
+                + "and ((a.datumAlarma = :danas and a.vremeAlarma < :sad) or (a.datumAlarma<:danas))";
         TypedQuery<Alarmi> query = em.createQuery(queryStr, Alarmi.class);
         query.setParameter("danas", dns);
         query.setParameter("sad", sad);
