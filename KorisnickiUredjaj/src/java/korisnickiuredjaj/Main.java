@@ -5,6 +5,7 @@
  */
 package korisnickiuredjaj;
 
+import entiteti.Kalendar;
 import entiteti.PustenePesme;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -317,10 +318,10 @@ public class Main {
                                         tipPoruke = "dodaj";
                                         System.out.println("Unesite opis obaveze:");
                                         poruka = sc.nextLine();
-                                        System.out.println("Unesite datum obaveze u formatu yyyy-MM-dd");
+                                        System.out.println("Unesite datum obaveze u formatu yyyy/MM/dd");
                                         String datum = sc.nextLine();
                                         try {
-                                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                                            SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
                                             format.parse(datum);
                                         } catch (ParseException e) {
                                             System.out.println("Pogresan format datuma");
@@ -492,16 +493,21 @@ public class Main {
 
                                 Message m = consumerP.receive();
                                 if (m instanceof ObjectMessage) {
-                                    /*try {
+                                    try {
                                         ObjectMessage om = (ObjectMessage) m;
-                                        LinkedList<PustenePesme> lista = (LinkedList<PustenePesme>) om.getObject();
+                                        LinkedList<Kalendar> lista = (LinkedList<Kalendar>) om.getObject();
                                         System.out.println("Lista do sada pustenih pesama:");
-                                        lista.forEach((p) -> {
-                                            System.out.println(p.getNazivPesme());
+                                        //System.out.println("Datum\tVreme\tOpis\tDestinacija");
+                                        System.out.printf("%-15s %-15s %-40s %-15s", "Datum","Vreme","Opis","Destinacija");
+                                        System.out.println();
+                                        lista.forEach((k) -> {
+                                            //System.out.println(k.getDatum()+"\t"+k.getVreme()+"\t"+k.getOpis()+"\t"+k.getDestinacija());
+                                            System.out.format("%-15s %-15s %-40s %-15s",k.getDatum(),k.getVreme(),k.getOpis(),k.getDestinacija());
+                                            System.out.println();
                                         });
                                     } catch (JMSException ex) {
                                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                                    }*/
+                                    }
                                 } else if (m instanceof TextMessage) {
                                     try {
                                         TextMessage tmes = (TextMessage) m;

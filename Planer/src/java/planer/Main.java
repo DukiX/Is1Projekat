@@ -5,8 +5,15 @@
  */
 package planer;
 
+import entiteti.Kalendar;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -15,11 +22,20 @@ import javax.annotation.Resource;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
+import javax.jms.JMSException;
 import javax.jms.JMSProducer;
+import javax.jms.Message;
+import javax.jms.ObjectMessage;
+import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Order;
+import javax.persistence.criteria.Root;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -33,40 +49,140 @@ public class Main {
 
     @Resource(lookup = "jms/__defaultConnectionFactory")
     private static ConnectionFactory connectionFactory;
-    
+
     @Resource(lookup = "PlanerT")
-    private static Topic topicP;
-    
+    private static Topic topic;
+
     @Resource(lookup = "AlarmT")
     private static Topic topicA;
-    
-    public static void main(String[] args) {
-        JMSContext contextP = connectionFactory.createContext();
-        JMSProducer producerP = contextP.createProducer();
 
-        JMSConsumer consumerP = contextP.createConsumer(topicP, "id = " + 1);
-        
+    public static void main(String[] args) {
+        JMSContext context = connectionFactory.createContext();
+        JMSProducer producer = context.createProducer();
+
+        JMSConsumer consumer = context.createConsumer(topic, "id = " + 1);
+
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("PlanerPU");
         EntityManager em = emf.createEntityManager();
+        wh:
+        while (true) {
+            Message m = consumer.receive();
+            if (m instanceof TextMessage) {
+                try {
+                    TextMessage tm = (TextMessage) m;
+                    String vrstaPoruke = tm.getStringProperty("Vrsta");
+                    String opis = "";
+                    String datum = "";
+                    String vreme = "";
+                    String destinacija = "";
+                    boolean podsetnik = false;
+                    long idZaIzmenu = 0;
+                    switch (vrstaPoruke) {
+                        case "izlistaj":
+
+                            CriteriaBuilder cb = em.getCriteriaBuilder();
+                            CriteriaQuery<Kalendar> q = cb.createQuery(Kalendar.class);
+                            Root<Kalendar> c = q.from(Kalendar.class);
+                            q.select(c);
+                            List<Order> orderList = new ArrayList();
+                            orderList.add(cb.asc(c.get("datum")));
+                            orderList.add(cb.asc(c.get("vreme")));
+
+                            q.orderBy(orderList);
+
+                            TypedQuery<Kalendar> tq = em.createQuery(q);
+                            List<Kalendar> lista = tq.getResultList();
+                            LinkedList<Kalendar> lst = new LinkedList<>();
+
+                            for (Kalendar k : lista) {
+                                lst.add(k);
+                            }
+                            
+                            ObjectMessage om = context.createObjectMessage(lst);
+
+                            om.setIntProperty("id", 2);
+                            producer.send(topic, om);
+                            System.out.println("Poslata lista obaveza");
+
+                            break;
+                        case "dodaj":
+                            opis = tm.getText();
+                            SimpleDateFormat format1 = new SimpleDateFormat("yyyy/MM/dd");
+                            SimpleDateFormat format2 = new SimpleDateFormat("HH:mm");
+
+                            datum = tm.getStringProperty("Datum");
+                            vreme = tm.getStringProperty("Vreme");
+                            Date datumD = new Date();
+                            Date vremeD = new Date();
+                            try {
+                                datumD = format1.parse(datum);
+                                vremeD = format2.parse(vreme);
+                            } catch (ParseException ex) {
+                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+
+                            java.sql.Date datesql = new java.sql.Date(datumD.getTime());
+                            java.sql.Time timesql = new java.sql.Time(vremeD.getTime());
+
+                            destinacija = tm.getStringProperty("Destinacija");
+                            if (destinacija.equals("")) {
+                                destinacija = null;
+                            }
+
+                            podsetnik = tm.getBooleanProperty("Podsetnik");
+
+                            long idAlarm = 0;
+
+                            if (podsetnik) {
+                                //napraviti alarm i tako to
+                            }
+
+                            em.getTransaction().begin();
+
+                            Kalendar k = new Kalendar(opis, datesql, timesql, destinacija, podsetnik, idAlarm);
+
+                            em.persist(k);
+
+                            em.getTransaction().commit();
+
+                            String s1 = "Dodata obaveza";
+                            System.out.println(s1);
+
+                            TextMessage tekstpor1 = context.createTextMessage(s1);
+                            tekstpor1.setIntProperty("id", 2);
+                            producer.send(topic, tekstpor1);
+                            break;
+                        case "izmeni":
+                            String s2 = "Izmenjena obaveza";
+                            System.out.println(s2);
+
+                            TextMessage tekstpor2 = context.createTextMessage(s2);
+                            tekstpor2.setIntProperty("id", 2);
+                            producer.send(topic, tekstpor2);
+                            break;
+                        default:
+                            System.out.println("Nepoznata komanda!");
+                            break;
+                    }
+                } catch (JMSException ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+
+                }
+            }
+        }
     }
-    
-    
-    
-    
-    
-    
-    
-    public static long izracunajVreme(String source,String destination){
+
+    public static long izracunajVreme(String source, String destination) {
         try {
             Document time = Jsoup.connect("http://www.travelmath.com/driving-time/from/" + source + "/to/" + destination).userAgent("Mozilla/5.0").get();
-            
+
             Elements elems2 = time.getAllElements();
 
             if (elems2.isEmpty()) {
                 System.out.println("No results found");
                 return 0;
             }
-            
+
             String vreme = "";
             int minuta = 0;
 
@@ -79,13 +195,13 @@ public class Main {
                     vreme = matcher.group(0);
                     Pattern p1 = Pattern.compile("\\d+ hour");
                     Matcher m1 = p1.matcher(vreme);
-                    String s1="";
+                    String s1 = "";
                     if (m1.find()) {
                         s1 = m1.group(0);
                     }
                     Pattern p2 = Pattern.compile("\\d+ minute");
                     Matcher m2 = p2.matcher(vreme);
-                    String s2="";
+                    String s2 = "";
                     if (m2.find()) {
                         s2 = m2.group(0);
                     }
@@ -105,13 +221,17 @@ public class Main {
             }
             System.out.println(vreme);
             System.out.println(minuta);
-            
-            long vr = minuta*60*1000;
+
+            long vr = minuta * 60 * 1000;
             return vr;
+
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Main.class
+                    .getName()).log(Level.SEVERE, null, ex);
+
         } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Main.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
         return 0;
     }
