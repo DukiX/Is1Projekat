@@ -63,6 +63,8 @@ public class Main {
 
         JMSConsumer consumer = context.createConsumer(topic, "id = " + 1);
 
+        JMSConsumer consumerA = context.createConsumer(topicA, "id = " + 3);
+
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("PlanerPU");
         EntityManager em = emf.createEntityManager();
         wh:
@@ -98,7 +100,7 @@ public class Main {
                             for (Kalendar k : lista) {
                                 lst.add(k);
                             }
-                            
+
                             ObjectMessage om = context.createObjectMessage(lst);
 
                             om.setIntProperty("id", 2);
@@ -132,10 +134,25 @@ public class Main {
 
                             podsetnik = tm.getBooleanProperty("Podsetnik");
 
-                            Alarmi a =null;
+                            Alarmi a = null;
 
                             if (podsetnik) {
-                                //napraviti alarm i tako to
+                                TextMessage message = context.createTextMessage(vreme);
+                                message.setStringProperty("datum", datum);
+                                message.setStringProperty("Vrsta", "NavijAlarmPlaner");
+                                message.setIntProperty("id", 1);
+                                producer.send(topicA, message);
+
+                                Message mes = consumerA.receive();
+                                if (mes instanceof ObjectMessage) {
+                                    try {
+                                        ObjectMessage omes = (ObjectMessage) mes;
+                                        a = (Alarmi) omes.getObject();
+                                        System.out.println("idA="+a.getId());
+                                    } catch (JMSException ex) {
+                                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                    }
+                                }
                             }
 
                             em.getTransaction().begin();
@@ -143,6 +160,8 @@ public class Main {
                             Kalendar k = new Kalendar(opis, datesql, timesql, destinacija, podsetnik, a);
 
                             em.persist(k);
+                            
+                            em.flush();
 
                             em.getTransaction().commit();
 
@@ -153,6 +172,7 @@ public class Main {
                             tekstpor1.setIntProperty("id", 2);
                             producer.send(topic, tekstpor1);
                             break;
+
                         case "izmeni":
                             String s2 = "Izmenjena obaveza";
                             System.out.println(s2);

@@ -64,9 +64,6 @@ public class Main {
 
         JMSConsumer consumerP = contextP.createConsumer(topicP, "id = " + 2);
 
-        /*consumerA.setMessageListener((message) -> {
-            
-        });*/
         try (Scanner sc = new Scanner(System.in)) {
             wh1:
             while (true) {

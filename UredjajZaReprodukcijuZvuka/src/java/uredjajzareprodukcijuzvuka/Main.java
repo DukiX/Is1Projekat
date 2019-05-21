@@ -119,8 +119,7 @@ public class Main {
                             q.select(c).groupBy(c.get("NazivPesme"));
                             TypedQuery<PustenePesme> tq = em.createQuery(q);
                             List<PustenePesme> lista = tq.getResultList();
-         
-                            
+
                             LinkedList<PustenePesme> lst = new LinkedList<>();
                             lista.forEach((l) -> {
                                 lst.add(l);
@@ -130,10 +129,7 @@ public class Main {
                             om.setIntProperty("id", 2);
                             producer.send(topic, om);
                             System.out.println("Poslata lista do sada pustenih pesama");
-                            /*System.out.println("Lista do sada pustenih pesama:");
-                            for(PustenePesme p:lista){
-                            System.out.println(p.getNazivPesme());
-                            }*/ break;
+                            break;
                         case "Kraj":
                             break wh;
                         default:

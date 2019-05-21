@@ -76,7 +76,7 @@ public class AlarmThread extends Thread {
                         cal1.set(Calendar.MINUTE, cal2.get(Calendar.MINUTE));
                         cal1.set(Calendar.SECOND, cal2.get(Calendar.SECOND));
 
-                        System.out.println("budim se u: " + cal1.get(Calendar.HOUR_OF_DAY) + ":" + cal1.get(Calendar.MINUTE));
+                        System.out.println("budim se u: " + cal1.get(Calendar.HOUR_OF_DAY) + ":" + cal1.get(Calendar.MINUTE)+"dat "+cal1.get(Calendar.DATE));
 
                         Calendar sad = Calendar.getInstance();
 
@@ -211,7 +211,10 @@ public class AlarmThread extends Thread {
 
             em.createQuery(update).executeUpdate();
 
+            em.flush();
+            
             em.getTransaction().commit();
+            
         }
     }
 }

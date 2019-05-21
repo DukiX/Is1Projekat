@@ -101,7 +101,7 @@ public class Main {
                                     em.persist(a);
 
                                     em.getTransaction().commit();
-                                    
+
                                     synchronized (at) {
                                         at.notifyAll();
                                     }
@@ -153,7 +153,7 @@ public class Main {
                                     em.persist(a);
 
                                     em.getTransaction().commit();
-                                    
+
                                     synchronized (at) {
                                         at.notifyAll();
                                     }
@@ -175,12 +175,57 @@ public class Main {
                                     producer.send(topic, tekstpor);
                                 }
                                 break;
+                            case "NavijAlarmPlaner":
+                                try {
+                                    vreme = tm.getText();
+                                    boolean periodican = tm.getBooleanProperty("periodican");
+                                    String dat = tm.getStringProperty("datum");
+                                    em.getTransaction().begin();
+
+                                    SimpleDateFormat format = new SimpleDateFormat("HH:mm");
+                                    Date vremeD = format.parse(vreme);
+                                    
+                                    SimpleDateFormat format2 = new SimpleDateFormat("yyyy/MM/dd");
+                                    Date datumD = format2.parse(dat);
+
+                                    Time t = new Time(vremeD.getTime());
+
+                                    java.sql.Date d = new java.sql.Date(datumD.getTime());
+                                    Alarmi a = new Alarmi(t, d, periodican, true);
+
+                                    em.persist(a);
+
+                                    em.flush();
+                                    
+                                    em.getTransaction().commit();
+
+                                    synchronized (at) {
+                                        at.notifyAll();
+                                    }
+
+                                    String s = "Alarm zabelezen: " + vreme;
+                                    System.out.println(s);
+
+                                    ObjectMessage objm = context.createObjectMessage(a);
+                                    objm.setIntProperty("id", 3);
+                                    producer.send(topic, objm);
+
+                                    //deaktivirajStare(em);
+                                } catch (ParseException ex) {
+                                    String s = "Pogresan format vremena: " + vreme;
+                                    System.out.println(s);
+
+                                    TextMessage tekstpor = context.createTextMessage(s);
+                                    tekstpor.setIntProperty("id", 2);
+                                    producer.send(topic, tekstpor);
+                                }
+                                break;
                             case "DohvatiVremena":
                                 CriteriaBuilder cb = em.getCriteriaBuilder();
                                 CriteriaQuery<Alarmi> q = cb.createQuery(Alarmi.class);
                                 Root<Alarmi> c = q.from(Alarmi.class);
                                 //q.where(cb.equal(c.get("periodican"), true));
-                                q.where(cb.equal(c.get("aktivan"),false));
+                                q.where(cb.equal(c.get("aktivan"), false));
                                 q.select(c);
 
                                 TypedQuery<Alarmi> tq = em.createQuery(q);
@@ -250,7 +295,7 @@ public class Main {
         Date danas = new Date();
 
         update.where(cb1.or(cb1.and(cb1.lessThan(e.get("vremeAlarma"), new Time(danas.getTime())),
-                cb1.equal(e.get("datumAlarma"), new java.sql.Date(danas.getTime()))),cb1.lessThan(e.get("datumAlarma"), new java.sql.Date(danas.getTime()))));
+                cb1.equal(e.get("datumAlarma"), new java.sql.Date(danas.getTime()))), cb1.lessThan(e.get("datumAlarma"), new java.sql.Date(danas.getTime()))));
 
         em.getTransaction().begin();
 
