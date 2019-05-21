@@ -83,18 +83,18 @@ public class Main {
                     switch (vrstaPoruke) {
                         case "izlistaj":
 
-                            CriteriaBuilder cb = em.getCriteriaBuilder();
-                            CriteriaQuery<Kalendar> q = cb.createQuery(Kalendar.class);
-                            Root<Kalendar> c = q.from(Kalendar.class);
-                            q.select(c);
-                            List<Order> orderList = new ArrayList();
-                            orderList.add(cb.asc(c.get("datum")));
-                            orderList.add(cb.asc(c.get("vreme")));
+                            Date danas = new Date();
+                            java.sql.Date dns = new java.sql.Date(danas.getTime());
+                            java.sql.Time sad = new java.sql.Time(danas.getTime());
 
-                            q.orderBy(orderList);
+                            String queryStr = "SELECT k FROM Kalendar k WHERE "
+                                    + "(k.datum = :danas and k.vreme > :sad) or (k.datum>:danas) "
+                                    + "ORDER BY k.datum, k.vreme ASC";
+                            TypedQuery<Kalendar> query = em.createQuery(queryStr, Kalendar.class);
+                            query.setParameter("danas", dns);
+                            query.setParameter("sad", sad);
 
-                            TypedQuery<Kalendar> tq = em.createQuery(q);
-                            List<Kalendar> lista = tq.getResultList();
+                            List<Kalendar> lista = query.getResultList();
                             LinkedList<Kalendar> lst = new LinkedList<>();
 
                             for (Kalendar k : lista) {
@@ -159,8 +159,8 @@ public class Main {
 
                                         TypedQuery<Alarmi> tqa = em.createQuery(qa);
                                         List<Alarmi> listaa = tqa.getResultList();
-                                        
-                                        a=listaa.get(0);
+
+                                        a = listaa.get(0);
 
                                     } catch (JMSException ex) {
                                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
@@ -187,6 +187,51 @@ public class Main {
                             break;
 
                         case "izmeni":
+                            idZaIzmenu = tm.getLongProperty("IdIzmeni");
+
+                            Kalendar kal = em.find(Kalendar.class, idZaIzmenu);
+                            
+                            String da = tm.getStringProperty("Datum");
+                            String vr = tm.getStringProperty("Vreme");
+                            String de = tm.getStringProperty("Destinacija");
+                            boolean b = tm.getBooleanProperty("Podsetnik");
+                            
+                            SimpleDateFormat for1 = new SimpleDateFormat("yyyy/MM/dd");
+                            SimpleDateFormat for2 = new SimpleDateFormat("HH:mm");
+                            
+                            Date dat = new Date();
+                            Date vre = new Date();
+                            try {
+                                dat = for1.parse(da);
+                                vre = for2.parse(vr);
+                            } catch (ParseException ex) {
+                                //Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+
+                            java.sql.Date datsql = new java.sql.Date(dat.getTime());
+                            java.sql.Time timsql = new java.sql.Time(vre.getTime());
+                            
+                            em.getTransaction().begin();
+                            
+                            opis = tm.getText();
+                            if(opis!=null){
+                                kal.setOpis(opis);
+                            }
+                            if(!da.equals("")){
+                                kal.setDatum(datsql);
+                            }
+                            if(!vr.equals("")){
+                                kal.setVreme(timsql);
+                            }
+                            if(!de.equals("")){
+                                kal.setDestinacija(de);
+                            }
+                            if(b){
+                                
+                            }
+
+                            em.getTransaction().commit();
+                            
                             String s2 = "Izmenjena obaveza";
                             System.out.println(s2);
 
