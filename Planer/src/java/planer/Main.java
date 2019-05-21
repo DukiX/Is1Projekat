@@ -147,8 +147,21 @@ public class Main {
                                 if (mes instanceof ObjectMessage) {
                                     try {
                                         ObjectMessage omes = (ObjectMessage) mes;
-                                        a = (Alarmi) omes.getObject();
-                                        System.out.println("idA="+a.getId());
+                                        Alarmi tmp = (Alarmi) omes.getObject();
+                                        System.out.println("idA=" + tmp.getId());
+
+                                        CriteriaBuilder cba = em.getCriteriaBuilder();
+                                        CriteriaQuery<Alarmi> qa = cba.createQuery(Alarmi.class);
+                                        Root<Alarmi> ca = qa.from(Alarmi.class);
+                                        //q.where(cb.equal(c.get("periodican"), true));
+                                        qa.where(cba.equal(ca.get("id"), tmp.getId()));
+                                        qa.select(ca);
+
+                                        TypedQuery<Alarmi> tqa = em.createQuery(qa);
+                                        List<Alarmi> listaa = tqa.getResultList();
+                                        
+                                        a=listaa.get(0);
+
                                     } catch (JMSException ex) {
                                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                                     }
@@ -160,7 +173,7 @@ public class Main {
                             Kalendar k = new Kalendar(opis, datesql, timesql, destinacija, podsetnik, a);
 
                             em.persist(k);
-                            
+
                             em.flush();
 
                             em.getTransaction().commit();

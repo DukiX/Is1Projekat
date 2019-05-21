@@ -84,7 +84,12 @@ public class Main {
                                         + "2: Izlistaj prethodne pesme\n"
                                         + "0: Nazad");
                                 String sctip = sc.nextLine();
-                                int tip = Integer.parseInt(sctip);
+                                int tip = 0;
+                                try {
+                                    tip = Integer.parseInt(sctip);
+                                } catch (NumberFormatException e) {
+                                    break wh1;
+                                }
                                 String tipStr = "";
                                 String pesma = "";
                                 switch (tip) {
@@ -152,7 +157,12 @@ public class Main {
                                         + "4: Postavi zeljeno zvono alarma\n"
                                         + "0: Nazad");
                                 String sctip = sc.nextLine();
-                                int tip = Integer.parseInt(sctip);
+                                int tip = 0;
+                                try {
+                                    tip = Integer.parseInt(sctip);
+                                } catch (NumberFormatException e) {
+                                    break whA;
+                                }
                                 String tipStr = "";
                                 String poruka = "";
                                 switch (tip) {
@@ -200,7 +210,7 @@ public class Main {
                                                 lista = (LinkedList<String>) om.getObject();
                                                 if (!lista.isEmpty()) {
                                                     System.out.println("Izaberi broj pored zeljenog alarma:");
-                                                }else{
+                                                } else {
                                                     System.out.println("Nema neaktivnih alarma:");
                                                 }
                                                 int i = 0;
@@ -298,8 +308,13 @@ public class Main {
                                         + "5: Kalkulator razdaljine\n"
                                         + "0: Nazad");
                                 String sctip = sc.nextLine();
-                                int tip = Integer.parseInt(sctip);
 
+                                int tip = 0;
+                                try {
+                                    tip = Integer.parseInt(sctip);
+                                } catch (NumberFormatException e) {
+                                    break whP;
+                                }
                                 String poruka = "";
                                 String tipPoruke = "";
                                 String datumProperty = "";

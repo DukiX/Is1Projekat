@@ -128,6 +128,7 @@ public class AlarmThread extends Thread {
 
     private void zvoni() {
         try {
+            em.clear();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<ZvonoAlarma> q = cb.createQuery(ZvonoAlarma.class);
             Root<ZvonoAlarma> c = q.from(ZvonoAlarma.class);
@@ -179,6 +180,8 @@ public class AlarmThread extends Thread {
 
         em.createQuery(update).executeUpdate();
 
+        em.flush();
+        
         em.getTransaction().commit();
     }
 

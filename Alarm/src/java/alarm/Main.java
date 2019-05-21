@@ -100,6 +100,8 @@ public class Main {
 
                                     em.persist(a);
 
+                                    em.flush();
+                                    
                                     em.getTransaction().commit();
 
                                     synchronized (at) {
@@ -151,6 +153,8 @@ public class Main {
                                     Alarmi a = new Alarmi(t, d, periodican, true);
 
                                     em.persist(a);
+                                    
+                                    em.flush();
 
                                     em.getTransaction().commit();
 
@@ -259,6 +263,8 @@ public class Main {
 
                                 em.createQuery(update).executeUpdate();
 
+                                em.flush();
+                                
                                 em.getTransaction().commit();
 
                                 String s = "Postavljena pesma zvona: " + pesma;
@@ -301,6 +307,8 @@ public class Main {
 
         em.createQuery(update).executeUpdate();
 
+        em.flush();
+        
         em.getTransaction().commit();
     }
 }

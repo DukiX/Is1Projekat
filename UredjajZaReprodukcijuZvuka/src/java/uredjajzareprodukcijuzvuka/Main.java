@@ -76,6 +76,8 @@ public class Main {
                                 PustenePesme p = new PustenePesme(imePesme);
 
                                 em.persist(p);
+                                
+                                em.flush();
 
                                 em.getTransaction().commit();
                                 s = "Pustena pesma: " + imePesme;
@@ -99,6 +101,8 @@ public class Main {
                                 PustenePesme p = new PustenePesme(imePesmeA);
 
                                 em.persist(p);
+                                
+                                em.flush();
 
                                 em.getTransaction().commit();
                                 sA = "Pustena pesma: " + imePesmeA;
