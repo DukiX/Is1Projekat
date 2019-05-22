@@ -101,7 +101,7 @@ public class Main {
                                     em.persist(a);
 
                                     em.flush();
-                                    
+
                                     em.getTransaction().commit();
 
                                     synchronized (at) {
@@ -153,7 +153,7 @@ public class Main {
                                     Alarmi a = new Alarmi(t, d, periodican, true);
 
                                     em.persist(a);
-                                    
+
                                     em.flush();
 
                                     em.getTransaction().commit();
@@ -182,13 +182,13 @@ public class Main {
                             case "NavijAlarmPlaner":
                                 try {
                                     vreme = tm.getText();
-                                    boolean periodican = tm.getBooleanProperty("periodican");
+                                    boolean periodican = false;
                                     String dat = tm.getStringProperty("datum");
                                     em.getTransaction().begin();
 
                                     SimpleDateFormat format = new SimpleDateFormat("HH:mm");
                                     Date vremeD = format.parse(vreme);
-                                    
+
                                     SimpleDateFormat format2 = new SimpleDateFormat("yyyy/MM/dd");
                                     Date datumD = format2.parse(dat);
 
@@ -200,7 +200,7 @@ public class Main {
                                     em.persist(a);
 
                                     em.flush();
-                                    
+
                                     em.getTransaction().commit();
 
                                     synchronized (at) {
@@ -223,6 +223,51 @@ public class Main {
                                     tekstpor.setIntProperty("id", 2);
                                     producer.send(topic, tekstpor);
                                 }
+                                break;
+                            case "IspraviAlarm":
+                                vreme = tm.getText();
+                                String dat = tm.getStringProperty("datum");
+                                long idAl = tm.getLongProperty("idAlZaIz");
+
+                                Alarmi alIzm = em.find(Alarmi.class, idAl);
+
+                                SimpleDateFormat format = new SimpleDateFormat("HH:mm");
+                                SimpleDateFormat format2 = new SimpleDateFormat("yyyy/MM/dd");
+                                Date vremeD = new Date();
+                                Date datumD = new Date();
+                                try {
+                                    vremeD = format.parse(vreme);
+
+                                    datumD = format2.parse(dat);
+
+                                } catch (ParseException ex) {
+                                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                                Time tt = new Time(vremeD.getTime());
+
+                                java.sql.Date d = new java.sql.Date(datumD.getTime());
+
+                                em.getTransaction().begin();
+
+                                alIzm.setDatumAlarma(d);
+                                alIzm.setVremeAlarma(tt);
+                                alIzm.setAktivan(true);
+
+                                em.flush();
+                                em.getTransaction().commit();
+                                em.clear();
+
+                                synchronized (at) {
+                                    at.notifyAll();
+                                }
+
+                                String st = "Alarm ispravljen";
+                                System.out.println(st);
+
+                                TextMessage tem = context.createTextMessage(st);
+                                tem.setIntProperty("id", 3);
+                                producer.send(topic, tem);
+
                                 break;
                             case "DohvatiVremena":
                                 CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -264,7 +309,7 @@ public class Main {
                                 em.createQuery(update).executeUpdate();
 
                                 em.flush();
-                                
+
                                 em.getTransaction().commit();
 
                                 String s = "Postavljena pesma zvona: " + pesma;
@@ -308,7 +353,7 @@ public class Main {
         em.createQuery(update).executeUpdate();
 
         em.flush();
-        
+
         em.getTransaction().commit();
     }
 }

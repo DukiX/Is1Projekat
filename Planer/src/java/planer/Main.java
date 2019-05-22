@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,7 +34,6 @@ import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -190,15 +188,15 @@ public class Main {
                             idZaIzmenu = tm.getLongProperty("IdIzmeni");
 
                             Kalendar kal = em.find(Kalendar.class, idZaIzmenu);
-                            
+
                             String da = tm.getStringProperty("Datum");
                             String vr = tm.getStringProperty("Vreme");
                             String de = tm.getStringProperty("Destinacija");
                             boolean b = tm.getBooleanProperty("Podsetnik");
-                            
+
                             SimpleDateFormat for1 = new SimpleDateFormat("yyyy/MM/dd");
                             SimpleDateFormat for2 = new SimpleDateFormat("HH:mm");
-                            
+
                             Date dat = new Date();
                             Date vre = new Date();
                             try {
@@ -210,28 +208,88 @@ public class Main {
 
                             java.sql.Date datsql = new java.sql.Date(dat.getTime());
                             java.sql.Time timsql = new java.sql.Time(vre.getTime());
-                            
+
                             em.getTransaction().begin();
-                            
+
                             opis = tm.getText();
-                            if(opis!=null){
+
+                            boolean ispraviAlarm = false;
+
+                            if (opis != null) {
                                 kal.setOpis(opis);
                             }
-                            if(!da.equals("")){
+                            if (!da.equals("")) {
                                 kal.setDatum(datsql);
+                                ispraviAlarm = true;
                             }
-                            if(!vr.equals("")){
+                            if (!vr.equals("")) {
                                 kal.setVreme(timsql);
+                                ispraviAlarm = true;
                             }
-                            if(!de.equals("")){
+                            if (!de.equals("")) {
                                 kal.setDestinacija(de);
                             }
-                            if(b){
-                                
+
+                            Alarmi aa = null;
+
+                            if (kal.getAlarm() == null) {
+                                if (b) {
+                                    TextMessage message = context.createTextMessage(vr);
+                                    message.setStringProperty("datum", da);
+                                    message.setStringProperty("Vrsta", "NavijAlarmPlaner");
+                                    message.setIntProperty("id", 1);
+                                    producer.send(topicA, message);
+
+                                    Message mes = consumerA.receive();
+                                    if (mes instanceof ObjectMessage) {
+                                        try {
+                                            ObjectMessage omes = (ObjectMessage) mes;
+                                            Alarmi tmp = (Alarmi) omes.getObject();
+                                            System.out.println("idA=" + tmp.getId());
+
+                                            CriteriaBuilder cba = em.getCriteriaBuilder();
+                                            CriteriaQuery<Alarmi> qa = cba.createQuery(Alarmi.class);
+                                            Root<Alarmi> ca = qa.from(Alarmi.class);
+                                            //q.where(cb.equal(c.get("periodican"), true));
+                                            qa.where(cba.equal(ca.get("id"), tmp.getId()));
+                                            qa.select(ca);
+
+                                            TypedQuery<Alarmi> tqa = em.createQuery(qa);
+                                            List<Alarmi> listaa = tqa.getResultList();
+
+                                            aa = listaa.get(0);
+
+                                            em.getTransaction().begin();
+                                            kal.setAlarm(aa);
+                                            em.flush();
+                                            em.getTransaction().commit();
+                                            em.clear();
+
+                                            
+
+                                        } catch (JMSException ex) {
+                                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (ispraviAlarm) {
+                                    TextMessage message = context.createTextMessage(vr);
+                                    message.setStringProperty("datum", da);
+                                    message.setStringProperty("Vrsta", "IspraviAlarm");
+                                    message.setLongProperty("idAlZaIz", kal.getAlarm().getId());
+                                    message.setIntProperty("id", 1);
+                                    producer.send(topicA, message);
+
+                                    Message mes = consumerA.receive();
+                                    if (mes instanceof TextMessage) {
+                                        System.out.println(((TextMessage) mes).getText());
+                                    }
+                                }
                             }
 
                             em.getTransaction().commit();
-                            
+
                             String s2 = "Izmenjena obaveza";
                             System.out.println(s2);
 

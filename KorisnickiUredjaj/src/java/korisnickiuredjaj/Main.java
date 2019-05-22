@@ -438,10 +438,10 @@ public class Main {
                                         dd = sc.nextLine();
                                         String datumm = "";
                                         if (dd.equals("d")) {
-                                            System.out.println("Unesite datum obaveze u formatu yyyy-MM-dd");
+                                            System.out.println("Unesite datum obaveze u formatu yyyy/MM/dd");
                                             datumm = sc.nextLine();
                                             try {
-                                                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                                                SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
                                                 format.parse(datumm);
                                             } catch (ParseException e) {
                                                 System.out.println("Pogresan format datuma");
