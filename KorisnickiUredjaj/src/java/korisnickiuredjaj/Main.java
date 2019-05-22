@@ -387,11 +387,13 @@ public class Main {
                                                 ObjectMessage om = (ObjectMessage) m;
                                                 lista = (LinkedList<Kalendar>) om.getObject();
                                                 System.out.println("Lista do obaveza:");
-                                                System.out.printf("%-2s %-15s %-15s %-40s %-15s","br", "Datum", "Vreme", "Opis", "Destinacija");
+                                                System.out.printf("%-2s %-15s %-15s %-40s %-15s %-5s","br", "Datum", "Vreme", "Opis", "Destinacija","Podsetnik");
                                                 System.out.println();
                                                 int i = 0;
                                                 for(Kalendar k:lista){
-                                                    System.out.format("%2d %-15s %-15s %-40s %-15s",i++, k.getDatum(), k.getVreme(), k.getOpis(), k.getDestinacija());
+                                                    System.out.format("%2d %-15s %-15s %-40s %-15s %-4s",i++, k.getDatum(), k.getVreme(), k.getOpis(),
+                                                            (k.getDestinacija()==null)?"Nema":k.getDestinacija(),
+                                                            (k.getAlarm()==null)?"Nema":"Ima");
                                                     System.out.println();
                                                 }
                                                 System.out.println("Izaberi broj ispred obaveze za menjanje");
@@ -434,9 +436,10 @@ public class Main {
                                             System.out.println("Unesite novi opis:");
                                             poruka = sc.nextLine();
                                         }
-                                        System.out.println("Da li zelite da promenite datum obaveze? d za da/ostalo za ne");
+                                        System.out.println("Da li zelite da promenite datum i vreme obaveze? d za da/ostalo za ne");
                                         dd = sc.nextLine();
                                         String datumm = "";
+                                        String vremee = "";
                                         if (dd.equals("d")) {
                                             System.out.println("Unesite datum obaveze u formatu yyyy/MM/dd");
                                             datumm = sc.nextLine();
@@ -448,12 +451,6 @@ public class Main {
                                                 break whP;
                                             }
                                             datumProperty = datumm;
-                                        }
-
-                                        System.out.println("Da li zelite da promenite vreme obaveze? d za da/ostalo za ne");
-                                        dd = sc.nextLine();
-                                        String vremee = "";
-                                        if (dd.equals("d")) {
                                             System.out.println("Unesite datum obaveze u formatu HH:mm");
                                             vremee = sc.nextLine();
                                             try {
@@ -479,6 +476,67 @@ public class Main {
                                         }
                                         break;
                                     case 4:
+                                        tipPoruke = "izlistaj";
+                                        poruka = "";
+                                        TextMessage messa = contextP.createTextMessage(poruka);
+                                        messa.setStringProperty("Vrsta", tipPoruke);
+
+                                        messa.setIntProperty("id", 1);
+
+                                        producerP.send(topicP, messa);
+                                        System.out.println("Poslat je zahtev za izlistavanje obaveza");
+
+                                        lista = null;
+                                        
+                                        Message mss = consumerP.receive();
+                                        if (mss instanceof ObjectMessage) {
+                                            try {
+                                                ObjectMessage om = (ObjectMessage) mss;
+                                                lista = (LinkedList<Kalendar>) om.getObject();
+                                                System.out.println("Lista do obaveza:");
+                                                System.out.printf("%-2s %-15s %-15s %-40s %-15s %-5s","br", "Datum", "Vreme", "Opis", "Destinacija","Podsetnik");
+                                                System.out.println();
+                                                int i = 0;
+                                                for(Kalendar k:lista){
+                                                    System.out.format("%2d %-15s %-15s %-40s %-15s %-4s",i++, k.getDatum(), k.getVreme(), k.getOpis(),
+                                                            (k.getDestinacija()==null)?"Nema":k.getDestinacija(),
+                                                            (k.getAlarm()==null)?"Nema":"Ima");
+                                                    System.out.println();
+                                                }
+                                                System.out.println("Izaberi broj ispred obaveze za menjanje");
+
+                                            } catch (JMSException ex) {
+                                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                            }
+                                        } else if (mss instanceof TextMessage) {
+                                            try {
+                                                TextMessage tmes = (TextMessage) mss;
+                                                String primljeno = tmes.getText();
+                                                System.out.println(primljeno);
+                                            } catch (JMSException ex) {
+                                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                            }
+                                        }
+
+                                        if (lista != null) {
+                                            String brAlStr = sc.nextLine();
+                                            int brAl = 0;
+                                            try {
+                                                brAl = Integer.parseInt(brAlStr);
+                                            } catch (NumberFormatException e) {
+                                                break whP;
+                                            }
+                                            if (brAl >= 0 && brAl < lista.size()) {
+                                                izmeniProperty = lista.get(brAl).getId();
+                                            } else {
+                                                System.out.println("Nepostojeci broj!");
+                                                break whP;
+                                            }
+                                        } else {
+                                            break whP;
+                                        }
+                                        tipPoruke = "obrisi";
+                                        poruka = "";
                                         break;
                                     case 5:
                                         break;
@@ -517,10 +575,12 @@ public class Main {
                                         ObjectMessage om = (ObjectMessage) m;
                                         LinkedList<Kalendar> lista = (LinkedList<Kalendar>) om.getObject();
                                         System.out.println("Lista do sada pustenih pesama:");
-                                        System.out.printf("%-15s %-15s %-40s %-15s", "Datum", "Vreme", "Opis", "Destinacija");
+                                        System.out.printf("%-15s %-15s %-40s %-15s %-5s", "Datum", "Vreme", "Opis", "Destinacija","Podsetnik");
                                         System.out.println();
                                         lista.forEach((k) -> {
-                                            System.out.format("%-15s %-15s %-40s %-15s", k.getDatum(), k.getVreme(), k.getOpis(), k.getDestinacija());
+                                            System.out.format("%-15s %-15s %-40s %-15s %-4s", k.getDatum(), k.getVreme(), k.getOpis(),
+                                                            (k.getDestinacija()==null)?"Nema":k.getDestinacija(),
+                                                            (k.getAlarm()==null)?"Nema":"Ima");
                                             System.out.println();
                                         });
                                     } catch (JMSException ex) {

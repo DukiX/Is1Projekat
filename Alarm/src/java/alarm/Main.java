@@ -184,6 +184,7 @@ public class Main {
                                     vreme = tm.getText();
                                     boolean periodican = false;
                                     String dat = tm.getStringProperty("datum");
+                                    int potrebnoVreme = tm.getIntProperty("potrebnovreme");
                                     em.getTransaction().begin();
 
                                     SimpleDateFormat format = new SimpleDateFormat("HH:mm");
@@ -191,6 +192,21 @@ public class Main {
 
                                     SimpleDateFormat format2 = new SimpleDateFormat("yyyy/MM/dd");
                                     Date datumD = format2.parse(dat);
+                                    
+                                    Calendar c1 = Calendar.getInstance();
+                                    Calendar c2 = Calendar.getInstance();
+                                    c1.setTime(vremeD);
+                                    c2.setTime(datumD);
+                                    
+                                    c1.set(Calendar.DAY_OF_MONTH, c2.get(Calendar.DAY_OF_MONTH));
+                                    c1.set(Calendar.MONTH, c2.get(Calendar.MONTH));
+                                    c1.set(Calendar.YEAR, c2.get(Calendar.YEAR));
+                                    
+                                    c1.add(Calendar.MINUTE, potrebnoVreme);
+                                    
+                                    vremeD = c1.getTime();
+                                    
+                                    datumD = c1.getTime();
 
                                     Time t = new Time(vremeD.getTime());
 
@@ -228,7 +244,8 @@ public class Main {
                                 vreme = tm.getText();
                                 String dat = tm.getStringProperty("datum");
                                 long idAl = tm.getLongProperty("idAlZaIz");
-
+                                int potrebnoVreme = tm.getIntProperty("potrebnovreme");
+                                
                                 Alarmi alIzm = em.find(Alarmi.class, idAl);
 
                                 SimpleDateFormat format = new SimpleDateFormat("HH:mm");
@@ -239,6 +256,21 @@ public class Main {
                                     vremeD = format.parse(vreme);
 
                                     datumD = format2.parse(dat);
+                                    
+                                    Calendar c1 = Calendar.getInstance();
+                                    Calendar c2 = Calendar.getInstance();
+                                    c1.setTime(vremeD);
+                                    c2.setTime(datumD);
+                                    
+                                    c1.set(Calendar.DAY_OF_MONTH, c2.get(Calendar.DAY_OF_MONTH));
+                                    c1.set(Calendar.MONTH, c2.get(Calendar.MONTH));
+                                    c1.set(Calendar.YEAR, c2.get(Calendar.YEAR));
+                                    
+                                    c1.add(Calendar.MINUTE, potrebnoVreme);
+                                    
+                                    vremeD = c1.getTime();
+                                    
+                                    datumD = c1.getTime();
 
                                 } catch (ParseException ex) {
                                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
@@ -319,6 +351,24 @@ public class Main {
                                 tekstpor.setIntProperty("id", 2);
                                 producer.send(topic, tekstpor);
 
+                                break;
+                            case "deaktiviraj":
+                                long idDeak = tm.getLongProperty("iddeaktiviraj");
+                                Alarmi al = em.find(Alarmi.class, idDeak);
+                                em.getTransaction().begin();
+                                al.setAktivan(false);
+                                em.getTransaction().commit();
+                                
+                                synchronized (at) {
+                                    at.notifyAll();
+                                }
+                                
+                                String str = "Alarm ispravljen";
+                                System.out.println(str);
+
+                                TextMessage teme = context.createTextMessage(str);
+                                teme.setIntProperty("id", 3);
+                                producer.send(topic, teme);
                                 break;
                             default:
                                 System.out.println("Nepoznata komanda!");

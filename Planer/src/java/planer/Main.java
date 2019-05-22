@@ -9,6 +9,7 @@ import entiteti.Alarmi;
 import entiteti.Kalendar;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -138,6 +139,14 @@ public class Main {
                                 TextMessage message = context.createTextMessage(vreme);
                                 message.setStringProperty("datum", datum);
                                 message.setStringProperty("Vrsta", "NavijAlarmPlaner");
+
+                                int pot = 0;
+
+                                if (destinacija != null) {
+                                    //POZOVI ODREDJIVANJE RAZDALJINE
+                                }
+
+                                message.setIntProperty("potrebnovreme", pot);
                                 message.setIntProperty("id", 1);
                                 producer.send(topicA, message);
 
@@ -230,13 +239,36 @@ public class Main {
                                 kal.setDestinacija(de);
                             }
 
+                            em.flush();
+                            em.getTransaction().commit();
+
                             Alarmi aa = null;
 
                             if (kal.getAlarm() == null) {
                                 if (b) {
-                                    TextMessage message = context.createTextMessage(vr);
-                                    message.setStringProperty("datum", da);
+
+                                    Time t = kal.getVreme();
+                                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+                                    Date dt = new Date(t.getTime());
+                                    String formVreme = sdf.format(dt);
+
+                                    java.sql.Date datu = kal.getDatum();
+                                    SimpleDateFormat sdfdat = new SimpleDateFormat("yyyy/MM/dd");
+                                    dt = new Date(datu.getTime());
+                                    String formDatum = sdfdat.format(dt);
+
+                                    TextMessage message = context.createTextMessage(formVreme);
+                                    message.setStringProperty("datum", formDatum);
                                     message.setStringProperty("Vrsta", "NavijAlarmPlaner");
+
+                                    int pot = 0;
+
+                                    if (!kal.getDestinacija().equals("")) {
+                                        //POZOVI ODREDJIVANJE RAZDALJINE
+                                    }
+
+                                    message.setIntProperty("potrebnovreme", pot);
+
                                     message.setIntProperty("id", 1);
                                     producer.send(topicA, message);
 
@@ -259,13 +291,17 @@ public class Main {
 
                                             aa = listaa.get(0);
 
+                                            if (aa == null) {
+                                                System.out.println("greska null je");
+                                            } else {
+                                                System.out.println("dobar je i id je = " + aa.getId());
+                                            }
+
                                             em.getTransaction().begin();
                                             kal.setAlarm(aa);
                                             em.flush();
                                             em.getTransaction().commit();
                                             em.clear();
-
-                                            
 
                                         } catch (JMSException ex) {
                                             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
@@ -278,6 +314,7 @@ public class Main {
                                     message.setStringProperty("datum", da);
                                     message.setStringProperty("Vrsta", "IspraviAlarm");
                                     message.setLongProperty("idAlZaIz", kal.getAlarm().getId());
+                                    message.setStringProperty("destinacija", de);
                                     message.setIntProperty("id", 1);
                                     producer.send(topicA, message);
 
@@ -288,14 +325,40 @@ public class Main {
                                 }
                             }
 
-                            em.getTransaction().commit();
-
                             String s2 = "Izmenjena obaveza";
                             System.out.println(s2);
 
                             TextMessage tekstpor2 = context.createTextMessage(s2);
                             tekstpor2.setIntProperty("id", 2);
                             producer.send(topic, tekstpor2);
+                            break;
+                        case "obrisi":
+                            long idZaBrisanje = tm.getLongProperty("IdIzmeni");
+                            Kalendar kalen = em.find(Kalendar.class, idZaBrisanje);
+
+                            if (kalen.getAlarm() != null) {
+                                TextMessage message = context.createTextMessage("");
+                                message.setLongProperty("iddeaktiviraj", kalen.getAlarm().getId());
+                                message.setStringProperty("Vrsta", "deaktiviraj");
+                                message.setIntProperty("id", 1);
+                                producer.send(topicA, message);
+
+                                Message mes = consumerA.receive();
+                                if (mes instanceof TextMessage) {
+                                    System.out.println(((TextMessage) mes).getText());
+                                }
+                            }
+                            em.getTransaction().begin();
+                            em.remove(kalen);
+                            em.getTransaction().commit();
+
+                            String s3 = "Obrisana obaveza";
+                            System.out.println(s3);
+
+                            TextMessage tekstpor3 = context.createTextMessage(s3);
+                            tekstpor3.setIntProperty("id", 2);
+                            producer.send(topic, tekstpor3);
+
                             break;
                         default:
                             System.out.println("Nepoznata komanda!");
