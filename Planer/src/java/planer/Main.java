@@ -8,7 +8,10 @@ package planer;
 import entiteti.Alarmi;
 import entiteti.Kalendar;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.Socket;
 import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -66,6 +69,20 @@ public class Main {
 
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("PlanerPU");
         EntityManager em = emf.createEntityManager();
+
+        //distance
+        Socket socket;
+        ObjectOutputStream oos = null;
+        ObjectInputStream ois = null;
+        try {
+            socket = new Socket("localhost", 50001);
+            oos = new ObjectOutputStream(socket.getOutputStream());
+            ois = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        //distance
         wh:
         while (true) {
             Message m = consumer.receive();
@@ -143,7 +160,20 @@ public class Main {
                                 int pot = 0;
 
                                 if (destinacija != null) {
-                                    //POZOVI ODREDJIVANJE RAZDALJINE
+                                    try {
+                                        if (oos != null && ois != null) {
+                                            oos.writeObject("Belgrade");
+                                            oos.writeObject(destinacija);
+                                            oos.flush();
+                                            pot = (int) ois.readObject();
+                                        } else {
+                                            System.out.println("Streamovi su null");
+                                        }
+                                    } catch (IOException ex) {
+                                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                    } catch (ClassNotFoundException ex) {
+                                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                    }
                                 }
 
                                 message.setIntProperty("potrebnovreme", pot);
@@ -237,6 +267,7 @@ public class Main {
                             }
                             if (!de.equals("")) {
                                 kal.setDestinacija(de);
+                                ispraviAlarm = true;
                             }
 
                             em.flush();
@@ -264,7 +295,20 @@ public class Main {
                                     int pot = 0;
 
                                     if (!kal.getDestinacija().equals("")) {
-                                        //POZOVI ODREDJIVANJE RAZDALJINE
+                                        try {
+                                            if (oos != null && ois != null) {
+                                                oos.writeObject("Belgrade");
+                                                oos.writeObject(kal.getDestinacija());
+                                                oos.flush();
+                                                pot = (int) ois.readObject();
+                                            } else {
+                                                System.out.println("Streamovi su null");
+                                            }
+                                        } catch (IOException ex) {
+                                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                        } catch (ClassNotFoundException ex) {
+                                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
                                     }
 
                                     message.setIntProperty("potrebnovreme", pot);
@@ -310,11 +354,43 @@ public class Main {
                                 }
                             } else {
                                 if (ispraviAlarm) {
-                                    TextMessage message = context.createTextMessage(vr);
-                                    message.setStringProperty("datum", da);
+                                    Time t = kal.getVreme();
+                                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+                                    Date dt = new Date(t.getTime());
+                                    String formVreme = sdf.format(dt);
+
+                                    java.sql.Date datu = kal.getDatum();
+                                    SimpleDateFormat sdfdat = new SimpleDateFormat("yyyy/MM/dd");
+                                    dt = new Date(datu.getTime());
+                                    String formDatum = sdfdat.format(dt);
+
+                                    TextMessage message = context.createTextMessage(formVreme);
+                                    message.setStringProperty("datum", formDatum);
                                     message.setStringProperty("Vrsta", "IspraviAlarm");
                                     message.setLongProperty("idAlZaIz", kal.getAlarm().getId());
                                     message.setStringProperty("destinacija", de);
+
+                                    int pot = 0;
+
+                                    if (!kal.getDestinacija().equals("")) {
+                                        try {
+                                            if (oos != null && ois != null) {
+                                                oos.writeObject("Belgrade");
+                                                oos.writeObject(kal.getDestinacija());
+                                                oos.flush();
+                                                pot = (int) ois.readObject();
+                                            } else {
+                                                System.out.println("Streamovi su null");
+                                            }
+                                        } catch (IOException ex) {
+                                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                        } catch (ClassNotFoundException ex) {
+                                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                                        }
+                                    }
+
+                                    message.setIntProperty("potrebnovreme", pot);
+
                                     message.setIntProperty("id", 1);
                                     producer.send(topicA, message);
 
@@ -359,6 +435,56 @@ public class Main {
                             tekstpor3.setIntProperty("id", 2);
                             producer.send(topic, tekstpor3);
 
+                            break;
+                        case "vremeAB":
+                            String lokA = tm.getStringProperty("lokA");
+                            String lokB = tm.getStringProperty("lokB");
+                            int potr = 0;
+                            try {
+                                if (oos != null && ois != null) {
+                                    oos.writeObject(lokA);
+                                    oos.writeObject(lokB);
+                                    oos.flush();
+                                    potr = (int) ois.readObject();
+                                } else {
+                                    System.out.println("Streamovi su null");
+                                }
+                            } catch (IOException ex) {
+                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                            } catch (ClassNotFoundException ex) {
+                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            String s5 = "Vreme potrebno:" + ((potr >= 60) ? (potr / 60) + " sati " : "") + (potr % 60) + " minuta";
+                            System.out.println(s5);
+
+                            TextMessage tekstpor5 = context.createTextMessage(s5);
+                            tekstpor5.setIntProperty("id", 2);
+                            producer.send(topic, tekstpor5);
+                            break;
+                        case "vremeB":
+                            String lokBB = tm.getStringProperty("lokB");
+                            int pot = 0;
+                            try {
+                                if (oos != null && ois != null) {
+                                    oos.writeObject("Belgrade");
+                                    oos.flush();
+                                    oos.writeObject(lokBB);
+                                    oos.flush();
+                                    pot = (int) ois.readObject();
+                                } else {
+                                    System.out.println("Streamovi su null");
+                                }
+                            } catch (IOException ex) {
+                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                            } catch (ClassNotFoundException ex) {
+                                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            String s4 = "Vreme potrebno:" + ((pot >= 60) ? (pot / 60) + " sati " : "") + (pot % 60) + " minuta";
+                            System.out.println(s4);
+
+                            TextMessage tekstpor4 = context.createTextMessage(s4);
+                            tekstpor4.setIntProperty("id", 2);
+                            producer.send(topic, tekstpor4);
                             break;
                         default:
                             System.out.println("Nepoznata komanda!");

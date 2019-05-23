@@ -14,7 +14,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
+import java.util.logging.Level; 
 import java.util.logging.Logger;
 import javax.annotation.Resource;
 import javax.jms.ConnectionFactory;
@@ -202,7 +202,7 @@ public class Main {
                                     c1.set(Calendar.MONTH, c2.get(Calendar.MONTH));
                                     c1.set(Calendar.YEAR, c2.get(Calendar.YEAR));
                                     
-                                    c1.add(Calendar.MINUTE, potrebnoVreme);
+                                    c1.add(Calendar.MINUTE, -potrebnoVreme);
                                     
                                     vremeD = c1.getTime();
                                     
@@ -266,7 +266,7 @@ public class Main {
                                     c1.set(Calendar.MONTH, c2.get(Calendar.MONTH));
                                     c1.set(Calendar.YEAR, c2.get(Calendar.YEAR));
                                     
-                                    c1.add(Calendar.MINUTE, potrebnoVreme);
+                                    c1.add(Calendar.MINUTE, -potrebnoVreme);
                                     
                                     vremeD = c1.getTime();
                                     

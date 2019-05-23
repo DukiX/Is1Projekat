@@ -321,6 +321,8 @@ public class Main {
                                 String vremeProperty = "";
                                 String destinacijaProperty = "";
                                 boolean podsetnikProperty = false;
+                                String lokacijaA="";
+                                String lokacijaB="";
                                 long izmeniProperty = 0;
 
                                 switch (tip) {
@@ -387,13 +389,13 @@ public class Main {
                                                 ObjectMessage om = (ObjectMessage) m;
                                                 lista = (LinkedList<Kalendar>) om.getObject();
                                                 System.out.println("Lista do obaveza:");
-                                                System.out.printf("%-2s %-15s %-15s %-40s %-15s %-5s","br", "Datum", "Vreme", "Opis", "Destinacija","Podsetnik");
+                                                System.out.printf("%-2s %-15s %-15s %-40s %-15s %-5s", "br", "Datum", "Vreme", "Opis", "Destinacija", "Podsetnik");
                                                 System.out.println();
                                                 int i = 0;
-                                                for(Kalendar k:lista){
-                                                    System.out.format("%2d %-15s %-15s %-40s %-15s %-4s",i++, k.getDatum(), k.getVreme(), k.getOpis(),
-                                                            (k.getDestinacija()==null)?"Nema":k.getDestinacija(),
-                                                            (k.getAlarm()==null)?"Nema":"Ima");
+                                                for (Kalendar k : lista) {
+                                                    System.out.format("%2d %-15s %-15s %-40s %-15s %-4s", i++, k.getDatum(), k.getVreme(), k.getOpis(),
+                                                            (k.getDestinacija() == null) ? "Nema" : k.getDestinacija(),
+                                                            (k.getAlarm() == null) ? "Nema" : "Ima");
                                                     System.out.println();
                                                 }
                                                 System.out.println("Izaberi broj ispred obaveze za menjanje");
@@ -487,20 +489,20 @@ public class Main {
                                         System.out.println("Poslat je zahtev za izlistavanje obaveza");
 
                                         lista = null;
-                                        
+
                                         Message mss = consumerP.receive();
                                         if (mss instanceof ObjectMessage) {
                                             try {
                                                 ObjectMessage om = (ObjectMessage) mss;
                                                 lista = (LinkedList<Kalendar>) om.getObject();
                                                 System.out.println("Lista do obaveza:");
-                                                System.out.printf("%-2s %-15s %-15s %-40s %-15s %-5s","br", "Datum", "Vreme", "Opis", "Destinacija","Podsetnik");
+                                                System.out.printf("%-2s %-15s %-15s %-40s %-15s %-5s", "br", "Datum", "Vreme", "Opis", "Destinacija", "Podsetnik");
                                                 System.out.println();
                                                 int i = 0;
-                                                for(Kalendar k:lista){
-                                                    System.out.format("%2d %-15s %-15s %-40s %-15s %-4s",i++, k.getDatum(), k.getVreme(), k.getOpis(),
-                                                            (k.getDestinacija()==null)?"Nema":k.getDestinacija(),
-                                                            (k.getAlarm()==null)?"Nema":"Ima");
+                                                for (Kalendar k : lista) {
+                                                    System.out.format("%2d %-15s %-15s %-40s %-15s %-4s", i++, k.getDatum(), k.getVreme(), k.getOpis(),
+                                                            (k.getDestinacija() == null) ? "Nema" : k.getDestinacija(),
+                                                            (k.getAlarm() == null) ? "Nema" : "Ima");
                                                     System.out.println();
                                                 }
                                                 System.out.println("Izaberi broj ispred obaveze za menjanje");
@@ -539,6 +541,33 @@ public class Main {
                                         poruka = "";
                                         break;
                                     case 5:
+                                        System.out.println("0: Vreme potrebno od lokacije A do B");
+                                        System.out.println("1: Vreme potrebno od trenutne lokacije do B");
+                                        String izab = sc.nextLine();
+                                        int iz = 0;
+                                        try {
+                                            iz = Integer.parseInt(izab);
+                                        } catch (NumberFormatException e) {
+                                            break whP;
+                                        }
+                                        
+                                        switch (iz) {
+                                            case 0:
+                                                System.out.println("Unesi lokaciju A:");
+                                                lokacijaA = sc.nextLine();
+                                                System.out.println("Unesi lokaciju B:");
+                                                lokacijaB = sc.nextLine();
+
+                                                tipPoruke = "vremeAB";
+                                                break;
+                                            case 1:
+                                                System.out.println("Unesi lokaciju B:");
+                                                lokacijaB = sc.nextLine();
+                                                tipPoruke = "vremeB";
+                                                break;
+                                            default:
+                                                break whP;
+                                        }
                                         break;
                                 }
 
@@ -548,6 +577,8 @@ public class Main {
                                 message.setStringProperty("Vreme", vremeProperty);
                                 message.setStringProperty("Destinacija", destinacijaProperty);
                                 message.setBooleanProperty("Podsetnik", podsetnikProperty);
+                                message.setStringProperty("lokA", lokacijaA);
+                                message.setStringProperty("lokB", lokacijaB);
                                 message.setLongProperty("IdIzmeni", izmeniProperty);
 
                                 message.setIntProperty("id", 1);
@@ -575,12 +606,12 @@ public class Main {
                                         ObjectMessage om = (ObjectMessage) m;
                                         LinkedList<Kalendar> lista = (LinkedList<Kalendar>) om.getObject();
                                         System.out.println("Lista do sada pustenih pesama:");
-                                        System.out.printf("%-15s %-15s %-40s %-15s %-5s", "Datum", "Vreme", "Opis", "Destinacija","Podsetnik");
+                                        System.out.printf("%-15s %-15s %-40s %-15s %-5s", "Datum", "Vreme", "Opis", "Destinacija", "Podsetnik");
                                         System.out.println();
                                         lista.forEach((k) -> {
                                             System.out.format("%-15s %-15s %-40s %-15s %-4s", k.getDatum(), k.getVreme(), k.getOpis(),
-                                                            (k.getDestinacija()==null)?"Nema":k.getDestinacija(),
-                                                            (k.getAlarm()==null)?"Nema":"Ima");
+                                                    (k.getDestinacija() == null) ? "Nema" : k.getDestinacija(),
+                                                    (k.getAlarm() == null) ? "Nema" : "Ima");
                                             System.out.println();
                                         });
                                     } catch (JMSException ex) {

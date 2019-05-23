@@ -59,11 +59,14 @@ class Worker extends Thread {
             ObjectInputStream ois = new ObjectInputStream(client.getInputStream());
 
             String destination;
+            String source;
 
             while (true) {
+                source = (String) ois.readObject();
                 destination = (String) ois.readObject();
+                
 
-                int g = dohvati("Belgrade",destination);
+                int g = dohvati(source,destination);
                 
                 oos.writeObject(g);
                 oos.flush();
@@ -76,7 +79,7 @@ class Worker extends Thread {
     
      public static int dohvati(String source, String destination) {
         try {
-            System.out.println("prosao" + destination);
+            System.out.println("sorce: " + source+" destination: "+destination);
             //String searchText = "distance from "+source+"to"+ destination+" km \"car\"";
             //String searchText = source+"to"+ destination+" distance km";
             //Document google = Jsoup.connect("https://google.com/search?q=" + URLEncoder.encode(searchText, encoding)).userAgent("Mozilla/5.0").get();
