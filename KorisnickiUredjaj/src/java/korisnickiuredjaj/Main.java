@@ -122,10 +122,10 @@ public class Main {
                                 if (m instanceof ObjectMessage) {
                                     try {
                                         ObjectMessage om = (ObjectMessage) m;
-                                        LinkedList<PustenePesme> lista = (LinkedList<PustenePesme>) om.getObject();
+                                        LinkedList<String> lista = (LinkedList<String>) om.getObject();
                                         System.out.println("Lista do sada pustenih pesama:");
                                         lista.forEach((p) -> {
-                                            System.out.println(p.getNazivPesme());
+                                            System.out.println(p);
                                         });
                                     } catch (JMSException ex) {
                                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);

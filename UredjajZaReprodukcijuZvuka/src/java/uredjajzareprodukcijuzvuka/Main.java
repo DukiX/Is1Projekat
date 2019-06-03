@@ -7,11 +7,16 @@ package uredjajzareprodukcijuzvuka;
 
 import entiteti.PustenePesme;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.net.URLEncoder;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.Resource;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSConsumer;
@@ -48,13 +53,24 @@ public class Main {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
         JMSContext context = cf.createContext();
         JMSConsumer consumer = context.createConsumer(topic, "id = " + 1);
         JMSProducer producer = context.createProducer();
 
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("UredjajZaReprodukcijuZvukaPU");
         EntityManager em = emf.createEntityManager();
+        
+        Socket socket;
+        ObjectOutputStream oos = null;
+        ObjectInputStream ois = null;
+        try {
+            socket = new Socket("localhost", 50002);
+            oos = new ObjectOutputStream(socket.getOutputStream());
+            ois = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         wh:
         while (true) {
@@ -69,7 +85,10 @@ public class Main {
                             String imePesme = tm.getText();
                             System.out.println("Pustam pesmu: " + imePesme);
                             String s = "";
-                            if (pustiPesmu(imePesme)) {
+                            oos.writeObject(imePesme);
+                            oos.flush();
+                            boolean pustio = (boolean)ois.readObject();
+                            if (pustio) {
 
                                 em.getTransaction().begin();
 
@@ -94,7 +113,10 @@ public class Main {
                             String imePesmeA = tm.getText();
                             System.out.println("Pustam pesmu: " + imePesmeA);
                             String sA = "";
-                            if (pustiPesmu(imePesmeA)) {
+                            oos.writeObject(imePesmeA);
+                            oos.flush();
+                            boolean pustioA = (boolean)ois.readObject();
+                            if (pustioA) {
 
                                 em.getTransaction().begin();
 
@@ -117,14 +139,14 @@ public class Main {
                             break;
                         case "PrikaziPrethodne":
 
-                            CriteriaBuilder cb = em.getCriteriaBuilder();
+                            /*CriteriaBuilder cb = em.getCriteriaBuilder();
                             CriteriaQuery<PustenePesme> q = cb.createQuery(PustenePesme.class);
                             Root<PustenePesme> c = q.from(PustenePesme.class);
-                            q.select(c).groupBy(c.get("NazivPesme"));
-                            TypedQuery<PustenePesme> tq = em.createQuery(q);
-                            List<PustenePesme> lista = tq.getResultList();
+                            q.select(c).groupBy(c.get("NazivPesme"));*/
+                            TypedQuery<String> tq = em.createQuery("select distinct(p.NazivPesme) from PustenePesme p",String.class);
+                            List<String> lista = tq.getResultList();
 
-                            LinkedList<PustenePesme> lst = new LinkedList<>();
+                            LinkedList<String> lst = new LinkedList<>();
                             lista.forEach((l) -> {
                                 lst.add(l);
                             });
@@ -151,20 +173,54 @@ public class Main {
     public static boolean pustiPesmu(String imePesme) {
         String encoding = "UTF-8";
         try {
-            String searchText = "youtube " + imePesme;
+            /*String searchText = "youtube " + imePesme;
             Document google = Jsoup.connect("http://google.com/search?q=" + URLEncoder.encode(searchText, encoding)).userAgent("Mozilla/5.0").get();
 
             Elements webSitesLinks = google.getElementsByTag("cite");
 
             //Check if any results found
             if (webSitesLinks.isEmpty()) {
-                System.out.println("No results found");
+                System.out.println("No results found "+imePesme);
                 return false;
             }
 
             //webSitesLinks.forEach( link -> System.out.println(link.text()));
-            java.awt.Desktop.getDesktop().browse(java.net.URI.create(webSitesLinks.get(0).text()));
+            java.awt.Desktop.getDesktop().browse(java.net.URI.create(webSitesLinks.get(0).text()));*/
 
+            
+            String searchText = "youtube "+imePesme;
+            Document google = Jsoup.connect("http://google.com/search?q=" + URLEncoder.encode(searchText, encoding)).get();
+
+            //Elements webSitesLinks = google.getElementsByTag("cite");
+            Elements webSitesLinks = google.getElementsByClass("r H1u2de");
+            //Elements webSitesLinks = google.getAllElements();
+            //Check if any results found
+            if (webSitesLinks.isEmpty()) {
+                webSitesLinks = google.getElementsByTag("cite");
+                if(webSitesLinks.isEmpty()){
+                    System.out.println("No results");
+                    return false;
+                }else{
+                    System.out.println(webSitesLinks.get(0).text());
+                    java.awt.Desktop.getDesktop().browse(java.net.URI.create(webSitesLinks.get(0).text()));
+                    return true;
+                }
+            }
+            
+            Pattern pat = Pattern.compile("www\\.youtube\\.com/watch([^\"]+)");
+            Matcher mat = pat.matcher(webSitesLinks.toString());
+            String link = "";
+            if(mat.find()){
+                link = mat.group(0);
+            }else{
+                System.out.println("No results found");
+                return false;
+            }
+            System.out.println(link);
+
+            //webSitesLinks.forEach( link -> System.out.println(link.toString()));
+            //System.out.println(webSitesLinks.get(0).toString());
+            java.awt.Desktop.getDesktop().browse(java.net.URI.create(link));
         } catch (IOException e) {
             e.printStackTrace();
         }
